@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import CustomerFeedbackModal from './CustomerFeedbackModal';
 
 const upcoming = [
   {
@@ -78,6 +79,8 @@ const statusStyles: Record<string, string> = {
 export default function CustomerDashboardContent() {
   const { user } = useAuth();
   const [bookOpen, setBookOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [booking, setBooking] = useState({
     date: '2026-08-15',
     time: '18:00',
@@ -85,6 +88,8 @@ export default function CustomerDashboardContent() {
     players: 2,
     roomType: 'Standard',
   });
+
+  const feedbackSession = { game: 'FC 26', room: 'Room 2', date: '2026-08-05', time: '17:30' };
 
   const firstName = user?.name?.split(' ')[0] ?? 'Guest';
   const loyaltyPoints = 1240;
@@ -289,6 +294,33 @@ export default function CustomerDashboardContent() {
 
         {/* Right column */}
         <div className="space-y-4">
+          {!feedbackSubmitted && (
+            <div className="card-base p-4 border-primary/30">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center">
+                  <Star size={18} className="text-warning fill-warning" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Your session just ended!</p>
+                  <p className="text-xs text-muted-foreground">
+                    {feedbackSession.game} · {feedbackSession.room} · {feedbackSession.date}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                How was your experience? Take 30 seconds to rate it and leave a note — it helps us
+                improve.
+              </p>
+              <button
+                onClick={() => setFeedbackOpen(true)}
+                className="w-full btn-primary flex items-center justify-center gap-2 h-10"
+              >
+                <Star size={14} />
+                Rate your experience
+              </button>
+            </div>
+          )}
+
           <div className="card-base p-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
@@ -429,6 +461,16 @@ export default function CustomerDashboardContent() {
             </form>
           </div>
         </div>
+      )}
+
+      {feedbackOpen && (
+        <CustomerFeedbackModal
+          session={feedbackSession}
+          onClose={() => {
+            setFeedbackOpen(false);
+            setFeedbackSubmitted(true);
+          }}
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import ReservationsHeader from './ReservationsHeader';
 import ReservationFilters from './ReservationFilters';
 import ReservationsTable from './ReservationsTable';
 import ReservationDrawer from './ReservationDrawer';
+import RateCustomerModal from './RateCustomerModal';
 import { Toaster } from 'sonner';
 
 export type ReservationStatus =
@@ -223,6 +224,90 @@ export const mockReservations: Reservation[] = [
     customerStatus: 'Regular',
     notes: 'Cancelled by customer — 2h before',
   },
+  {
+    id: 'res-013',
+    customer: 'Hana Mostafa',
+    phone: '01123344556',
+    room: 'Waiting',
+    roomType: 'Premium',
+    game: 'FC 26',
+    players: 4,
+    date: '2026-08-08',
+    time: '17:30',
+    duration: '60',
+    status: 'Waiting',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+    notes: 'Waiting for Room 6 to free up',
+  },
+  {
+    id: 'res-014',
+    customer: 'Yara Emad',
+    phone: '01034455667',
+    room: 'Waiting',
+    roomType: 'VIP',
+    game: 'Call of Duty',
+    players: 6,
+    date: '2026-08-08',
+    time: '18:00',
+    duration: '120',
+    status: 'Waiting',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Loyal',
+    notes: 'Group birthday party — wants VIP room',
+  },
+  {
+    id: 'res-015',
+    customer: 'Mostafa Tarek',
+    phone: '01145566778',
+    room: 'Waiting',
+    roomType: 'Standard',
+    game: 'GTA V',
+    players: 2,
+    date: '2026-08-08',
+    time: '18:15',
+    duration: '90',
+    status: 'Waiting',
+    sessionType: 'fixed',
+    createdBy: 'staff',
+    customerStatus: 'New',
+  },
+  {
+    id: 'res-016',
+    customer: 'Rana Khaled',
+    phone: '01056677889',
+    room: 'Waiting',
+    roomType: 'Premium',
+    game: 'PES 2024',
+    players: 2,
+    date: '2026-08-08',
+    time: '18:30',
+    duration: '60',
+    status: 'Waiting',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+    notes: 'Waiting — 20 min so far',
+  },
+  {
+    id: 'res-017',
+    customer: 'Omar Fathy',
+    phone: '01167788990',
+    room: 'Waiting',
+    roomType: 'Standard',
+    game: 'FC 26',
+    players: 2,
+    date: '2026-08-08',
+    time: '19:00',
+    duration: '60',
+    status: 'Waiting',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'New',
+    notes: 'Walk-in — no room available',
+  },
 ];
 
 export default function ReservationsContent() {
@@ -231,6 +316,7 @@ export default function ReservationsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | 'all'>('all');
   const [dateFilter, setDateFilter] = useState('2026-08-08');
+  const [rateTarget, setRateTarget] = useState<Reservation | null>(null);
 
   const filtered = reservations.filter((r) => {
     const matchesSearch =
@@ -266,9 +352,21 @@ export default function ReservationsContent() {
         onDateChange={setDateFilter}
         reservations={reservations}
       />
-      <ReservationsTable reservations={filtered} onStatusChange={handleStatusChange} />
+      <ReservationsTable
+        reservations={filtered}
+        onStatusChange={handleStatusChange}
+        onRateCustomer={setRateTarget}
+      />
       {drawerOpen && (
         <ReservationDrawer onClose={() => setDrawerOpen(false)} onSave={handleAddReservation} />
+      )}
+      {rateTarget && (
+        <RateCustomerModal
+          customer={rateTarget.customer}
+          room={rateTarget.room}
+          game={rateTarget.game}
+          onClose={() => setRateTarget(null)}
+        />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { ArrowUpDown, Eye, PlayCircle, Ban, UserCheck, MoreHorizontal } from 'lucide-react';
+import { ArrowUpDown, Eye, PlayCircle, Ban, UserCheck, MoreHorizontal, Star } from 'lucide-react';
 import type { Reservation, ReservationStatus } from './ReservationsContent';
 import { toast } from 'sonner';
 
@@ -26,6 +26,7 @@ const customerStatusStyles: Record<string, string> = {
 interface ReservationsTableProps {
   reservations: Reservation[];
   onStatusChange: (id: string, status: ReservationStatus) => void;
+  onRateCustomer?: (res: Reservation) => void;
 }
 
 type SortKey = 'customer' | 'room' | 'game' | 'date' | 'time' | 'status';
@@ -34,6 +35,7 @@ type SortDir = 'asc' | 'desc';
 export default function ReservationsTable({
   reservations,
   onStatusChange,
+  onRateCustomer,
 }: ReservationsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -247,6 +249,15 @@ export default function ReservationsTable({
                           className="p-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors"
                         >
                           <Ban size={13} />
+                        </button>
+                      ) : null}
+                      {res.status === 'Completed' && onRateCustomer ? (
+                        <button
+                          title="Rate customer"
+                          onClick={() => onRateCustomer(res)}
+                          className="p-1.5 rounded-lg bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                        >
+                          <Star size={13} />
                         </button>
                       ) : null}
                       <button
