@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Star, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { addFeedback } from '@/data/feedback';
 
 interface CustomerFeedbackModalProps {
   session: { game: string; room: string; date: string; time: string };
+  customer?: string;
   onClose: () => void;
 }
 
@@ -17,7 +19,11 @@ const moodTags = [
   'Equipment issue',
 ];
 
-export default function CustomerFeedbackModal({ session, onClose }: CustomerFeedbackModalProps) {
+export default function CustomerFeedbackModal({
+  session,
+  customer = 'Guest',
+  onClose,
+}: CustomerFeedbackModalProps) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -33,7 +39,16 @@ export default function CustomerFeedbackModal({ session, onClose }: CustomerFeed
   const handleSubmit = async () => {
     if (rating === 0) return;
     setIsSubmitting(true);
-    // Backend integration point: POST /api/sessions/:id/feedback with { rating, tags, notes }
+    addFeedback({
+      customer,
+      game: session.game,
+      room: session.room,
+      date: session.date,
+      time: session.time,
+      rating,
+      tags: selectedTags,
+      notes,
+    });
     await new Promise((r) => setTimeout(r, 700));
     toast.success('Thanks! Your feedback has been submitted');
     setIsSubmitting(false);

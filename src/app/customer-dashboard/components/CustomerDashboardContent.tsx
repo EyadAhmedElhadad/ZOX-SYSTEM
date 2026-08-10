@@ -466,6 +466,7 @@ export default function CustomerDashboardContent() {
       {feedbackOpen && (
         <CustomerFeedbackModal
           session={feedbackSession}
+          customer={user?.name}
           onClose={() => {
             setFeedbackOpen(false);
             setFeedbackSubmitted(true);
