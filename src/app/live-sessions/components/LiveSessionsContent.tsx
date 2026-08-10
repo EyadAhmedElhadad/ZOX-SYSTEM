@@ -8,6 +8,7 @@ import AddProductModal from './AddProductModal';
 import QuickActionModal, { type QuickActionTarget } from './QuickActionModal';
 import QuickActionsMenu from './QuickActionsMenu';
 import { Toaster } from 'sonner';
+import { Zap } from 'lucide-react';
 import { initialSessions } from '../../../data/sessions';
 import type { LiveSession, SessionProduct } from '../../../data/sessions';
 import { ZONES } from '../../../data/zones';
@@ -98,10 +99,19 @@ export default function LiveSessionsContent() {
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto">
       <Toaster position="bottom-right" theme="system" />
-      <LiveSessionsHeader
-        sessionCount={sessions.length}
-        onQuickAction={() => setZoneMenuOpen(true)}
-      />
+      <LiveSessionsHeader sessionCount={sessions.length} />
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <p className="text-sm text-muted-foreground">
+          Rooms & zones — quick actions add a drink and extend time
+        </p>
+        <button
+          onClick={() => setZoneMenuOpen(true)}
+          className="flex items-center gap-2 rounded-lg bg-warning/10 border border-warning/25 text-warning hover:bg-warning/20 px-3 py-2 text-xs font-bold transition-all duration-150 active:scale-95"
+        >
+          <Zap size={14} />
+          Quick Actions
+        </button>
+      </div>
       <SessionsGrid
         sessions={sessions}
         onAddProduct={(s) => setAddProductTarget(s)}

@@ -1,16 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Monitor, RefreshCw, Zap } from 'lucide-react';
+import { Monitor, RefreshCw } from 'lucide-react';
 
 interface LiveSessionsHeaderProps {
   sessionCount: number;
-  onQuickAction: () => void;
 }
 
-export default function LiveSessionsHeader({
-  sessionCount,
-  onQuickAction,
-}: LiveSessionsHeaderProps) {
+export default function LiveSessionsHeader({ sessionCount }: LiveSessionsHeaderProps) {
   const [lastUpdated, setLastUpdated] = useState('');
 
   useEffect(() => {
@@ -58,14 +54,6 @@ export default function LiveSessionsHeader({
           <span className="text-xs font-semibold text-foreground">
             {sessionCount} / 10 rooms occupied
           </span>
-          <span className="w-px h-4 bg-border mx-1" />
-          <button
-            onClick={onQuickAction}
-            className="flex items-center gap-1.5 rounded-md bg-warning/10 border border-warning/25 text-warning hover:bg-warning/20 px-2 py-1 text-xs font-bold transition-all duration-150 active:scale-95"
-          >
-            <Zap size={12} />
-            Quick Actions
-          </button>
         </div>
       </div>
     </div>
