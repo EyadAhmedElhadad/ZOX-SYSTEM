@@ -2,22 +2,10 @@
 import React, { useState } from 'react';
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
 import type { LiveSession, SessionProduct } from './LiveSessionsContent';
+import { catalogProducts, categories } from '../../../data/catalog';
 import { toast } from 'sonner';
 
-const catalogProducts = [
-  { id: 'cat-001', name: 'Pepsi', category: 'Drinks', price: 25, emoji: '🥤' },
-  { id: 'cat-002', name: 'Water', category: 'Drinks', price: 15, emoji: '💧' },
-  { id: 'cat-003', name: 'Juice', category: 'Drinks', price: 35, emoji: '🧃' },
-  { id: 'cat-004', name: 'Energy Drink', category: 'Drinks', price: 45, emoji: '⚡' },
-  { id: 'cat-005', name: 'Chips', category: 'Snacks', price: 20, emoji: '🍟' },
-  { id: 'cat-006', name: 'Indomie', category: 'Food', price: 30, emoji: '🍜' },
-  { id: 'cat-007', name: 'Chocolate', category: 'Snacks', price: 25, emoji: '🍫' },
-  { id: 'cat-008', name: 'Popcorn', category: 'Snacks', price: 20, emoji: '🍿' },
-  { id: 'cat-009', name: 'Sandwich', category: 'Food', price: 50, emoji: '🥪' },
-  { id: 'cat-010', name: 'Headphone Adapter', category: 'Accessories', price: 80, emoji: '🎧' },
-];
-
-const categories = ['All', 'Drinks', 'Snacks', 'Food', 'Accessories'];
+const products = catalogProducts;
 
 interface AddProductModalProps {
   session: LiveSession;
@@ -28,13 +16,11 @@ interface AddProductModalProps {
 export default function AddProductModal({ session, onClose, onAdd }: AddProductModalProps) {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [quantities, setQuantities] = useState<Record<string, number>>(
-    Object.fromEntries(catalogProducts.map((p) => [p.id, 0]))
+    Object.fromEntries(products.map((p) => [p.id, 0]))
   );
 
   const filtered =
-    categoryFilter === 'All'
-      ? catalogProducts
-      : catalogProducts.filter((p) => p.category === categoryFilter);
+    categoryFilter === 'All' ? products : products.filter((p) => p.category === categoryFilter);
 
   const adjustQty = (productId: string, delta: number) => {
     setQuantities((prev) => ({
@@ -43,7 +29,7 @@ export default function AddProductModal({ session, onClose, onAdd }: AddProductM
     }));
   };
 
-  const selectedItems = catalogProducts.filter((p) => quantities[p.id] > 0);
+  const selectedItems = products.filter((p) => quantities[p.id] > 0);
   const selectedTotal = selectedItems.reduce((sum, p) => sum + p.price * quantities[p.id], 0);
 
   const handleAddToSession = () => {

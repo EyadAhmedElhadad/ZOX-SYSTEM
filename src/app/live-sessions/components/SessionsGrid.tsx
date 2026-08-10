@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Pause, Play, CreditCard, Gamepad2, Users, Clock } from 'lucide-react';
+import { ShoppingCart, Pause, Play, CreditCard, Gamepad2, Users, Clock, Zap } from 'lucide-react';
 import type { LiveSession } from './LiveSessionsContent';
 
 interface SessionsGridProps {
   sessions: LiveSession[];
   onAddProduct: (session: LiveSession) => void;
+  onQuickAction: (session: LiveSession) => void;
   onTogglePause: (sessionId: string) => void;
   onEndSession: (session: LiveSession) => void;
 }
@@ -35,6 +36,7 @@ const roomTypeColors: Record<string, { badge: string; glow: string }> = {
 export default function SessionsGrid({
   sessions,
   onAddProduct,
+  onQuickAction,
   onTogglePause,
   onEndSession,
 }: SessionsGridProps) {
@@ -83,14 +85,14 @@ export default function SessionsGrid({
         const elapsedMin = elapsed[session.id] ?? session.startMinutesAgo;
         const billTotal = calculateBill(session, elapsedMin);
         const rtColors = roomTypeColors[session.roomType];
+        const totalDuration =
+          session.sessionType === 'fixed'
+            ? (session.fixedDurationMinutes ?? 0) + (session.extendedMinutes ?? 0)
+            : undefined;
         const isNearEnd =
-          session.sessionType === 'fixed' &&
-          session.fixedDurationMinutes &&
-          elapsedMin >= session.fixedDurationMinutes - 10;
+          session.sessionType === 'fixed' && totalDuration && elapsedMin >= totalDuration - 10;
         const isOvertime =
-          session.sessionType === 'fixed' &&
-          session.fixedDurationMinutes &&
-          elapsedMin >= session.fixedDurationMinutes;
+          session.sessionType === 'fixed' && totalDuration && elapsedMin >= totalDuration;
 
         return (
           <div
@@ -181,7 +183,7 @@ export default function SessionsGrid({
                     {formatElapsed(elapsedMin)}
                   </span>
                 </div>
-                {session.sessionType === 'fixed' && session.fixedDurationMinutes && (
+                {session.sessionType === 'fixed' && totalDuration ? (
                   <div className="mt-1.5">
                     <div className="w-full bg-background/60 rounded-full h-1.5">
                       <div
@@ -189,16 +191,23 @@ export default function SessionsGrid({
                           isOvertime ? 'bg-danger' : isNearEnd ? 'bg-warning' : 'bg-accent'
                         }`}
                         style={{
-                          width: `${Math.min(100, Math.round((elapsedMin / session.fixedDurationMinutes) * 100))}%`,
+                          width: `${Math.min(100, Math.round((elapsedMin / totalDuration) * 100))}%`,
                         }}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {Math.min(100, Math.round((elapsedMin / session.fixedDurationMinutes) * 100))}
-                      % of {session.fixedDurationMinutes}min
+                      {Math.min(100, Math.round((elapsedMin / totalDuration) * 100))}% of{' '}
+                      {totalDuration}min
+                      {session.extendedMinutes ? ` (+${session.extendedMinutes}min)` : ''}
                     </p>
                   </div>
-                )}
+                ) : session.extendedMinutes ? (
+                  <div className="mt-1.5">
+                    <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
+                      +{session.extendedMinutes}min time credit
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
               {/* Controllers */}
@@ -272,7 +281,15 @@ export default function SessionsGrid({
             </div>
 
             {/* Action buttons */}
-            <div className="px-4 pb-4 pt-2 grid grid-cols-3 gap-2">
+            <div className="px-4 pb-4 pt-2 grid grid-cols-4 gap-2">
+              <button
+                onClick={() => onQuickAction(session)}
+                title="Quick action: add a drink and extend time"
+                className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-warning/10 border border-warning/25 text-warning hover:bg-warning/20 transition-all duration-150 active:scale-95"
+              >
+                <Zap size={15} />
+                <span className="text-xs font-semibold">Quick</span>
+              </button>
               <button
                 onClick={() => onAddProduct(session)}
                 title="Add café product"
