@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { X, Zap, Plus, Minus } from 'lucide-react';
-import type { LiveSession, SessionProduct } from './LiveSessionsContent';
+import type { SessionProduct } from './LiveSessionsContent';
 import {
   QUICK_ACTION_CONFIG,
   getQuickActionProduct,
@@ -9,9 +9,20 @@ import {
 } from '../../../lib/roomQuickActions';
 import { toast } from 'sonner';
 
+export interface QuickActionTarget {
+  id: string;
+  label: string;
+  customer: string;
+  hourlyRate: number;
+  sessionType: 'open' | 'fixed';
+  fixedDurationMinutes?: number;
+  extendedMinutes?: number;
+  products: SessionProduct[];
+}
+
 export interface QuickActionResponse {
   ok: boolean;
-  session?: LiveSession;
+  target?: QuickActionTarget;
   productAdded?: SessionProduct;
   timeExtended?: number;
   cost?: number;
@@ -19,40 +30,46 @@ export interface QuickActionResponse {
 }
 
 interface QuickActionModalProps {
-  session: LiveSession;
+  target: QuickActionTarget;
+  apiPath: string;
   onClose: () => void;
-  onApply: (updatedSession: LiveSession, result: QuickActionResponse) => void;
+  onApply: (updated: QuickActionTarget, result: QuickActionResponse) => void;
 }
 
-export default function QuickActionModal({ session, onClose, onApply }: QuickActionModalProps) {
+export default function QuickActionModal({
+  target,
+  apiPath,
+  onClose,
+  onApply,
+}: QuickActionModalProps) {
   const drink = getQuickActionProduct();
   const [quantity, setQuantity] = useState(QUICK_ACTION_CONFIG.quantity);
   const [extendMinutes, setExtendMinutes] = useState(QUICK_ACTION_CONFIG.extendMinutes);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const cost = getQuickActionCost(drink.price, quantity, session.hourlyRate, extendMinutes);
+  const cost = getQuickActionCost(drink.price, quantity, target.hourlyRate, extendMinutes);
   const totalDuration =
-    (session.fixedDurationMinutes ?? 0) + (session.extendedMinutes ?? 0) + extendMinutes;
+    (target.fixedDurationMinutes ?? 0) + (target.extendedMinutes ?? 0) + extendMinutes;
 
   const handleConfirm = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch('/api/quick-action', {
+      const res = await fetch(apiPath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session,
+          target,
           productId: drink.id,
           quantity,
           extendMinutes,
         }),
       });
       const result: QuickActionResponse = await res.json();
-      if (result.ok && result.session) {
+      if (result.ok && result.target) {
         toast.success(
           `${result.productAdded?.name} x${result.productAdded?.qty} added + ${result.timeExtended}min time`
         );
-        onApply(result.session, result);
+        onApply(result.target, result);
       } else {
         toast.error(result.error ?? 'Quick action failed');
       }
@@ -76,7 +93,7 @@ export default function QuickActionModal({ session, onClose, onApply }: QuickAct
             <div>
               <h2 className="text-base font-bold text-foreground">Quick Action</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {session.room} · {session.customer}
+                {target.label} · {target.customer}
               </p>
             </div>
           </div>
@@ -126,7 +143,7 @@ export default function QuickActionModal({ session, onClose, onApply }: QuickAct
           {/* Extend time */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              2 · Extend room time
+              2 · Extend time
             </p>
             <div className="grid grid-cols-3 gap-2">
               {QUICK_ACTION_CONFIG.durationOptions.map((minutes) => (
@@ -144,9 +161,9 @@ export default function QuickActionModal({ session, onClose, onApply }: QuickAct
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {session.sessionType === 'fixed'
+              {target.sessionType === 'fixed'
                 ? `New session length: ${totalDuration}min total`
-                : `Time credit added to this open session`}
+                : `Time credit added to this ${target.hourlyRate > 0 ? 'session' : 'order'}`}
             </p>
           </div>
 
@@ -165,10 +182,10 @@ export default function QuickActionModal({ session, onClose, onApply }: QuickAct
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                Time (+{extendMinutes}min × {session.hourlyRate} EGP/hr)
+                Time (+{extendMinutes}min × {target.hourlyRate} EGP/hr)
               </span>
               <span className="font-tabular font-semibold text-foreground">
-                {Math.round((extendMinutes / 60) * session.hourlyRate).toLocaleString()} EGP
+                {Math.round((extendMinutes / 60) * target.hourlyRate).toLocaleString()} EGP
               </span>
             </div>
             <div className="border-t border-border pt-2 mt-2 flex items-center justify-between">

@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initialSessions, type LiveSession } from '../../../data/sessions';
-import { catalogProducts } from '../../../data/catalog';
-import {
-  applyQuickAction,
-  ALLOWED_DURATIONS,
-  QUICK_ACTION_CONFIG,
-} from '../../../lib/roomQuickActions';
+import { ZONES, type ZoneSession } from '../../../../data/zones';
+import { catalogProducts } from '../../../../data/catalog';
+import { ALLOWED_DURATIONS, QUICK_ACTION_CONFIG } from '../../../../lib/roomQuickActions';
+import { applyZoneQuickAction } from '../../../../lib/zoneQuickActions';
 
-const store = new Map<string, LiveSession>(initialSessions.map((s) => [s.id, structuredClone(s)]));
+const store = new Map<string, ZoneSession>(ZONES.map((z) => [z.id, structuredClone(z)]));
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +12,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const session: LiveSession | undefined = body?.target;
+    const target: ZoneSession | undefined = body?.target;
     const productId: unknown = body?.productId;
     const quantity: unknown = body?.quantity;
     const extendMinutes: unknown = body?.extendMinutes;
 
-    if (!session?.id) {
-      return NextResponse.json({ ok: false, error: 'session is required' }, { status: 400 });
+    if (!target?.id || !store.has(target.id)) {
+      return NextResponse.json({ ok: false, error: 'Unknown zone' }, { status: 400 });
     }
 
     const product = catalogProducts.find((p) => p.id === productId);
@@ -37,19 +34,19 @@ export async function POST(request: NextRequest) {
       ? Number(extendMinutes)
       : QUICK_ACTION_CONFIG.extendMinutes;
 
-    const current = structuredClone(session);
+    const current = store.get(target.id)!;
 
-    const result = applyQuickAction(current, {
+    const result = applyZoneQuickAction(current, {
       productId: product.id,
       quantity: qty,
       extendMinutes: minutes,
     });
 
-    store.set(session.id, structuredClone(result.session));
+    store.set(target.id, structuredClone(result.zone));
 
     return NextResponse.json({
       ok: true,
-      target: result.session,
+      target: result.zone,
       productAdded: result.productAdded,
       timeExtended: result.timeExtended,
       cost: result.cost,

@@ -5,10 +5,13 @@ import SessionsGrid from './SessionsGrid';
 import PaymentModal from './PaymentModal';
 import EvaluationPopup from './EvaluationPopup';
 import AddProductModal from './AddProductModal';
-import QuickActionModal from './QuickActionModal';
+import QuickActionModal, { type QuickActionTarget } from './QuickActionModal';
+import QuickActionsMenu from './QuickActionsMenu';
 import { Toaster } from 'sonner';
 import { initialSessions } from '../../../data/sessions';
 import type { LiveSession, SessionProduct } from '../../../data/sessions';
+import { ZONES } from '../../../data/zones';
+import type { ZoneSession } from '../../../data/zones';
 
 export type { LiveSession, SessionProduct };
 
@@ -20,6 +23,14 @@ export default function LiveSessionsContent() {
   const [evaluationTarget, setEvaluationTarget] = useState<LiveSession | null>(null);
   const [addProductTarget, setAddProductTarget] = useState<LiveSession | null>(null);
   const [quickActionTarget, setQuickActionTarget] = useState<LiveSession | null>(null);
+  const [zones, setZones] = useState<ZoneSession[]>(ZONES);
+  const [zoneMenuOpen, setZoneMenuOpen] = useState(false);
+  const [zoneQuickActionTarget, setZoneQuickActionTarget] = useState<ZoneSession | null>(null);
+
+  const sessionToTarget = (session: LiveSession): QuickActionTarget => ({
+    ...session,
+    label: session.room,
+  });
 
   const handleAddProduct = (sessionId: string, product: SessionProduct) => {
     setSessions((prev) =>
@@ -65,15 +76,32 @@ export default function LiveSessionsContent() {
     setEvaluationTarget(null);
   };
 
-  const handleQuickAction = (updatedSession: LiveSession) => {
-    setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)));
+  const handleQuickAction = (updated: QuickActionTarget) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === updated.id ? (updated as unknown as LiveSession) : s))
+    );
     setQuickActionTarget(null);
+  };
+
+  const handleZoneSelect = (zone: ZoneSession) => {
+    setZoneMenuOpen(false);
+    setZoneQuickActionTarget(zone);
+  };
+
+  const handleZoneQuickAction = (updated: QuickActionTarget) => {
+    setZones((prev) =>
+      prev.map((z) => (z.id === updated.id ? (updated as unknown as ZoneSession) : z))
+    );
+    setZoneQuickActionTarget(null);
   };
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto">
       <Toaster position="bottom-right" theme="system" />
-      <LiveSessionsHeader sessionCount={sessions.length} />
+      <LiveSessionsHeader
+        sessionCount={sessions.length}
+        onQuickAction={() => setZoneMenuOpen(true)}
+      />
       <SessionsGrid
         sessions={sessions}
         onAddProduct={(s) => setAddProductTarget(s)}
@@ -100,9 +128,25 @@ export default function LiveSessionsContent() {
       )}
       {quickActionTarget && (
         <QuickActionModal
-          session={quickActionTarget}
+          target={sessionToTarget(quickActionTarget)}
+          apiPath="/api/quick-action"
           onClose={() => setQuickActionTarget(null)}
           onApply={handleQuickAction}
+        />
+      )}
+      {zoneMenuOpen && (
+        <QuickActionsMenu
+          zones={zones}
+          onClose={() => setZoneMenuOpen(false)}
+          onSelect={handleZoneSelect}
+        />
+      )}
+      {zoneQuickActionTarget && (
+        <QuickActionModal
+          target={{ ...zoneQuickActionTarget, label: zoneQuickActionTarget.zoneName }}
+          apiPath="/api/zones/quick-action"
+          onClose={() => setZoneQuickActionTarget(null)}
+          onApply={handleZoneQuickAction}
         />
       )}
     </div>

@@ -14,14 +14,27 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#7c3aed',
 };
 
 export const metadata: Metadata = {
   title: 'Zoox — Gaming Center Management System',
   description:
     'Zoox helps gaming centers manage rooms, sessions, reservations, and café sales from one fast operational dashboard.',
+  manifest: '/manifest.webmanifest',
+  applicationName: 'Zoox',
+  appleWebApp: {
+    capable: true,
+    title: 'Zoox',
+    statusBarStyle: 'black-translucent',
+  },
   icons: {
-    icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
+    icon: [
+      { url: '/favicon.ico', type: 'image/x-icon' },
+      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icons/icon-512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: [{ url: '/icons/icon-192.png', sizes: '192x192' }],
   },
 };
 
@@ -38,6 +51,12 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('zoox-theme');if(t==='light'||(!t&&matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.classList.add('light')}}catch(e){}`,
+          }}
+        />
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}`,
           }}
         />
 
