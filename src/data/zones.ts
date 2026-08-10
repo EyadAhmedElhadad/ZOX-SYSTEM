@@ -17,6 +17,19 @@ export interface ZoneSession {
   status: 'active' | 'idle';
 }
 
+const cafeTables: ZoneSession[] = Array.from({ length: 10 }, (_, i) => ({
+  id: `zone-cf${i + 1}`,
+  zoneName: `Cafe Table ${i + 1}`,
+  zoneType: 'cafe',
+  emoji: '☕',
+  customer: 'Available',
+  players: 0,
+  hourlyRate: 0,
+  sessionType: 'open',
+  products: [],
+  status: 'idle',
+}));
+
 export const ZONES: ZoneSession[] = [
   {
     id: 'zone-ps',
@@ -48,23 +61,12 @@ export const ZONES: ZoneSession[] = [
     zoneName: 'Billiards Table 2',
     zoneType: 'billiards',
     emoji: '🎱',
-    customer: 'Omar Fathy',
-    players: 2,
+    customer: 'Available',
+    players: 0,
     hourlyRate: 60,
     sessionType: 'open',
     products: [],
     status: 'idle',
   },
-  {
-    id: 'zone-cafe',
-    zoneName: 'Cafe Floor',
-    zoneType: 'cafe',
-    emoji: '☕',
-    customer: 'Walk-in',
-    players: 0,
-    hourlyRate: 0,
-    sessionType: 'open',
-    products: [],
-    status: 'active',
-  },
+  ...cafeTables,
 ];

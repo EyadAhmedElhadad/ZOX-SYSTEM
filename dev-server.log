@@ -1,0 +1,14 @@
+
+> zoox@0.1.0 dev
+> next dev -p 4028
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:4028
+   - Network:      http://192.168.1.5:4028
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.4s
+ ○ Compiling /reservations ...
+ ✓ Compiled /reservations in 12.4s (2115 modules)
+ GET /reservations 200 in 13814ms

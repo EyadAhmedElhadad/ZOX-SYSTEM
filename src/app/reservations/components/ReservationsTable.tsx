@@ -27,6 +27,7 @@ interface ReservationsTableProps {
   reservations: Reservation[];
   onStatusChange: (id: string, status: ReservationStatus) => void;
   onRateCustomer?: (res: Reservation) => void;
+  isCustomer?: boolean;
 }
 
 type SortKey = 'customer' | 'room' | 'game' | 'date' | 'time' | 'status';
@@ -36,6 +37,7 @@ export default function ReservationsTable({
   reservations,
   onStatusChange,
   onRateCustomer,
+  isCustomer = false,
 }: ReservationsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -90,8 +92,9 @@ export default function ReservationsTable({
         </div>
         <p className="text-base font-semibold text-foreground mb-1">No reservations found</p>
         <p className="text-sm text-muted-foreground max-w-sm">
-          No reservations match your current filters. Try adjusting the date or status filter, or
-          create a new reservation.
+          {isCustomer
+            ? 'You have no reservations yet. Book a session from your dashboard to get started.'
+            : 'No reservations match your current filters. Try adjusting the date or status filter, or create a new reservation.'}
         </p>
       </div>
     );
@@ -103,9 +106,11 @@ export default function ReservationsTable({
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-3 w-8">
-                <input type="checkbox" className="w-3.5 h-3.5 accent-primary" />
-              </th>
+              {!isCustomer && (
+                <th className="text-left px-4 py-3 w-8">
+                  <input type="checkbox" className="w-3.5 h-3.5 accent-primary" />
+                </th>
+              )}
               <th className="text-left px-4 py-3">
                 <SortHeader label="Customer" sKey="customer" />
               </th>
@@ -133,9 +138,11 @@ export default function ReservationsTable({
               <th className="text-left px-4 py-3">
                 <SortHeader label="Status" sKey="status" />
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">
-                Actions
-              </th>
+              {!isCustomer && (
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -146,9 +153,11 @@ export default function ReservationsTable({
                   key={res.id}
                   className="border-b border-border/50 hover:bg-muted/20 transition-colors group"
                 >
-                  <td className="px-4 py-3">
-                    <input type="checkbox" className="w-3.5 h-3.5 accent-primary" />
-                  </td>
+                  {!isCustomer && (
+                    <td className="px-4 py-3">
+                      <input type="checkbox" className="w-3.5 h-3.5 accent-primary" />
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{res.customer}</p>
@@ -164,7 +173,14 @@ export default function ReservationsTable({
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{res.room}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {res.category === 'billiards'
+                          ? '🎱'
+                          : res.category === 'cafe'
+                            ? '☕'
+                            : '🎮'}{' '}
+                        {res.room}
+                      </p>
                       <span
                         className={`text-xs ${res.roomType === 'VIP' ? 'text-warning' : res.roomType === 'Premium' ? 'text-info' : 'text-muted-foreground'}`}
                       >
@@ -190,84 +206,97 @@ export default function ReservationsTable({
                     </p>
                   </td>
                   <td className="px-4 py-3 relative">
-                    <button
-                      onClick={() => setOpenStatusMenu(openStatusMenu === res.id ? null : res.id)}
-                      className={`status-badge cursor-pointer hover:opacity-80 transition-opacity ${sc.bg} ${sc.text}`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                      {res.status}
-                    </button>
-                    {openStatusMenu === res.id && (
-                      <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-xl py-1 min-w-[140px] fade-in">
-                        {(
-                          [
-                            'Reserved',
-                            'Arrived',
-                            'Active',
-                            'Completed',
-                            'Cancelled',
-                            'No Show',
-                            'Waiting',
-                            'Late',
-                          ] as ReservationStatus[]
-                        ).map((s) => (
-                          <button
-                            key={`status-opt-${s}`}
-                            onClick={() => handleStatusUpdate(res.id, s)}
-                            className={`w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-muted/50 transition-colors ${statusStyles[s].text}`}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
+                    {isCustomer ? (
+                      <span className={`status-badge ${sc.bg} ${sc.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                        {res.status}
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() =>
+                            setOpenStatusMenu(openStatusMenu === res.id ? null : res.id)
+                          }
+                          className={`status-badge cursor-pointer hover:opacity-80 transition-opacity ${sc.bg} ${sc.text}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                          {res.status}
+                        </button>
+                        {openStatusMenu === res.id && (
+                          <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-xl py-1 min-w-[140px] fade-in">
+                            {(
+                              [
+                                'Reserved',
+                                'Arrived',
+                                'Active',
+                                'Completed',
+                                'Cancelled',
+                                'No Show',
+                                'Waiting',
+                                'Late',
+                              ] as ReservationStatus[]
+                            ).map((s) => (
+                              <button
+                                key={`status-opt-${s}`}
+                                onClick={() => handleStatusUpdate(res.id, s)}
+                                className={`w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-muted/50 transition-colors ${statusStyles[s].text}`}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {res.status === 'Reserved' || res.status === 'Arrived' ? (
+                  {!isCustomer && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {res.status === 'Reserved' || res.status === 'Arrived' ? (
+                          <button
+                            title="Start session"
+                            onClick={() => handleStatusUpdate(res.id, 'Active')}
+                            className="p-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                          >
+                            <PlayCircle size={13} />
+                          </button>
+                        ) : null}
+                        {res.status === 'Reserved' ? (
+                          <button
+                            title="Mark arrived"
+                            onClick={() => handleStatusUpdate(res.id, 'Arrived')}
+                            className="p-1.5 rounded-lg bg-info/10 text-info hover:bg-info/20 transition-colors"
+                          >
+                            <UserCheck size={13} />
+                          </button>
+                        ) : null}
+                        {res.status !== 'Completed' && res.status !== 'Cancelled' ? (
+                          <button
+                            title="Cancel reservation"
+                            onClick={() => handleStatusUpdate(res.id, 'Cancelled')}
+                            className="p-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors"
+                          >
+                            <Ban size={13} />
+                          </button>
+                        ) : null}
+                        {res.status === 'Completed' && onRateCustomer ? (
+                          <button
+                            title="Rate customer"
+                            onClick={() => onRateCustomer(res)}
+                            className="p-1.5 rounded-lg bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                          >
+                            <Star size={13} />
+                          </button>
+                        ) : null}
                         <button
-                          title="Start session"
-                          onClick={() => handleStatusUpdate(res.id, 'Active')}
-                          className="p-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                          title="More options"
+                          className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <PlayCircle size={13} />
+                          <MoreHorizontal size={13} />
                         </button>
-                      ) : null}
-                      {res.status === 'Reserved' ? (
-                        <button
-                          title="Mark arrived"
-                          onClick={() => handleStatusUpdate(res.id, 'Arrived')}
-                          className="p-1.5 rounded-lg bg-info/10 text-info hover:bg-info/20 transition-colors"
-                        >
-                          <UserCheck size={13} />
-                        </button>
-                      ) : null}
-                      {res.status !== 'Completed' && res.status !== 'Cancelled' ? (
-                        <button
-                          title="Cancel reservation"
-                          onClick={() => handleStatusUpdate(res.id, 'Cancelled')}
-                          className="p-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors"
-                        >
-                          <Ban size={13} />
-                        </button>
-                      ) : null}
-                      {res.status === 'Completed' && onRateCustomer ? (
-                        <button
-                          title="Rate customer"
-                          onClick={() => onRateCustomer(res)}
-                          className="p-1.5 rounded-lg bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
-                        >
-                          <Star size={13} />
-                        </button>
-                      ) : null}
-                      <button
-                        title="More options"
-                        className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <MoreHorizontal size={13} />
-                      </button>
-                    </div>
-                  </td>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               );
             })}

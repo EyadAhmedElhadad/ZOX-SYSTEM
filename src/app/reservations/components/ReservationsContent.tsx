@@ -4,8 +4,10 @@ import ReservationsHeader from './ReservationsHeader';
 import ReservationFilters from './ReservationFilters';
 import ReservationsTable from './ReservationsTable';
 import ReservationDrawer from './ReservationDrawer';
+import QuickBookModal from './QuickBookModal';
 import RateCustomerModal from './RateCustomerModal';
 import { Toaster } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type ReservationStatus =
   'Reserved' | 'Arrived' | 'Active' | 'Completed' | 'Cancelled' | 'No Show' | 'Waiting' | 'Late';
@@ -26,6 +28,7 @@ export interface Reservation {
   notes?: string;
   createdBy: 'staff' | 'customer';
   customerStatus: 'New' | 'Regular' | 'Loyal' | 'VIP' | 'Low Reliability';
+  category?: 'playstation' | 'billiards' | 'cafe';
 }
 
 export const mockReservations: Reservation[] = [
@@ -308,17 +311,118 @@ export const mockReservations: Reservation[] = [
     customerStatus: 'New',
     notes: 'Walk-in — no room available',
   },
+  {
+    id: 'res-020',
+    customer: 'Ahmed Khalil',
+    phone: '01005667890',
+    room: 'Room 1',
+    roomType: 'Standard',
+    game: 'FC 26',
+    players: 2,
+    date: '2026-08-08',
+    time: '15:00',
+    duration: null,
+    status: 'Active',
+    sessionType: 'open',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+  },
+  {
+    id: 'res-021',
+    customer: 'Ahmed Khalil',
+    phone: '01005667890',
+    room: 'Room 3',
+    roomType: 'Standard',
+    game: 'Call of Duty',
+    players: 2,
+    date: '2026-08-09',
+    time: '18:00',
+    duration: '60',
+    status: 'Reserved',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+  },
+  {
+    id: 'res-022',
+    customer: 'Ahmed Khalil',
+    phone: '01005667890',
+    room: 'Room 5',
+    roomType: 'Premium',
+    game: 'FC 26',
+    players: 2,
+    date: '2026-08-12',
+    time: '17:00',
+    duration: '120',
+    status: 'Reserved',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+  },
+  {
+    id: 'res-023',
+    customer: 'Ahmed Khalil',
+    phone: '01005667890',
+    room: 'Room 2',
+    roomType: 'Standard',
+    game: 'FC 26',
+    players: 2,
+    date: '2026-08-05',
+    time: '18:30',
+    duration: '90',
+    status: 'Completed',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+  },
+  {
+    id: 'res-024',
+    customer: 'Ahmed Khalil',
+    phone: '01005667890',
+    room: 'Room 8',
+    roomType: 'VIP',
+    game: 'GTA V',
+    players: 4,
+    date: '2026-08-02',
+    time: '20:00',
+    duration: '120',
+    status: 'Completed',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+  },
+  {
+    id: 'res-025',
+    customer: 'Ahmed Khalil',
+    phone: '01005667890',
+    room: 'Room 6',
+    roomType: 'Premium',
+    game: 'PES 2024',
+    players: 2,
+    date: '2026-07-29',
+    time: '21:00',
+    duration: '60',
+    status: 'Completed',
+    sessionType: 'fixed',
+    createdBy: 'customer',
+    customerStatus: 'Regular',
+  },
 ];
 
 export default function ReservationsContent() {
+  const { user, role } = useAuth();
+  const isCustomer = role === 'customer';
+  const customerName = user?.name ?? '';
   const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | 'all'>('all');
   const [dateFilter, setDateFilter] = useState('2026-08-08');
   const [rateTarget, setRateTarget] = useState<Reservation | null>(null);
+  const [quickBookOpen, setQuickBookOpen] = useState(false);
 
   const filtered = reservations.filter((r) => {
+    const matchesCustomer = !isCustomer || r.customer === customerName;
     const matchesSearch =
       !searchQuery ||
       r.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -326,8 +430,8 @@ export default function ReservationsContent() {
       r.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.game.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    const matchesDate = !dateFilter || r.date === dateFilter;
-    return matchesSearch && matchesStatus && matchesDate;
+    const matchesDate = isCustomer || !dateFilter || r.date === dateFilter;
+    return matchesCustomer && matchesSearch && matchesStatus && matchesDate;
   });
 
   const handleAddReservation = (newRes: Reservation) => {
@@ -342,7 +446,12 @@ export default function ReservationsContent() {
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto">
       <Toaster position="bottom-right" theme="system" />
-      <ReservationsHeader onNewReservation={() => setDrawerOpen(true)} count={filtered.length} />
+      <ReservationsHeader
+        onNewReservation={() => setDrawerOpen(true)}
+        onQuickBook={() => setQuickBookOpen(true)}
+        count={filtered.length}
+        isCustomer={isCustomer}
+      />
       <ReservationFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -351,14 +460,24 @@ export default function ReservationsContent() {
         dateFilter={dateFilter}
         onDateChange={setDateFilter}
         reservations={reservations}
+        isCustomer={isCustomer}
       />
       <ReservationsTable
         reservations={filtered}
         onStatusChange={handleStatusChange}
-        onRateCustomer={setRateTarget}
+        onRateCustomer={isCustomer ? undefined : setRateTarget}
+        isCustomer={isCustomer}
       />
       {drawerOpen && (
         <ReservationDrawer onClose={() => setDrawerOpen(false)} onSave={handleAddReservation} />
+      )}
+      {quickBookOpen && (
+        <QuickBookModal
+          defaultCustomer={isCustomer ? customerName : ''}
+          createdBy={isCustomer ? 'customer' : 'staff'}
+          onClose={() => setQuickBookOpen(false)}
+          onSave={handleAddReservation}
+        />
       )}
       {rateTarget && (
         <RateCustomerModal

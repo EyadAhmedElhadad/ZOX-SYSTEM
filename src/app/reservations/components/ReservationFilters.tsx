@@ -23,6 +23,7 @@ interface ReservationFiltersProps {
   dateFilter: string;
   onDateChange: (d: string) => void;
   reservations: Reservation[];
+  isCustomer?: boolean;
 }
 
 export default function ReservationFilters({
@@ -33,6 +34,7 @@ export default function ReservationFilters({
   dateFilter,
   onDateChange,
   reservations,
+  isCustomer = false,
 }: ReservationFiltersProps) {
   const countByStatus = (s: ReservationStatus | 'all') => {
     if (s === 'all') return reservations.length;
@@ -55,12 +57,14 @@ export default function ReservationFilters({
             className="input-field pl-9"
           />
         </div>
-        <input
-          type="date"
-          value={dateFilter}
-          onChange={(e) => onDateChange(e.target.value)}
-          className="input-field w-auto sm:w-44"
-        />
+        {!isCustomer && (
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="input-field w-auto sm:w-44"
+          />
+        )}
       </div>
       <div className="flex flex-wrap gap-1.5">
         {statuses.map((s) => {
