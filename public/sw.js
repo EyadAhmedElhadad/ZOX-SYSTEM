@@ -28,18 +28,17 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME && key !== RUNTIME_CACHE)
-            .map((key) => caches.delete(key))
-        )
-      )
-      .then(() => self.clients.claim())
-      .then(() => {
-        self.clients.matchAll().then((clients) => {
-          clients.forEach((client) => client.postMessage({ type: 'ZOOX_SW_UPDATED' }));
-        });
+      .then((keys) => {
+        const stale = keys.filter((key) => key !== CACHE_NAME && key !== RUNTIME_CACHE);
+        return Promise.all(stale.map((key) => caches.delete(key))).then(() => stale.length);
+      })
+      .then((deleted) => {
+        self.clients.claim();
+        if (deleted > 0) {
+          self.clients.matchAll().then((clients) => {
+            clients.forEach((client) => client.postMessage({ type: 'ZOOX_SW_UPDATED' }));
+          });
+        }
       })
   );
 });
@@ -69,7 +68,11 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match(NAVIGATION_FALLBACK).then((c) => c || caches.match('/')))
+        .catch(() =>
+          caches
+            .match(event.request)
+            .then((c) => c || caches.match(NAVIGATION_FALLBACK))
+        )
     );
     return;
   }

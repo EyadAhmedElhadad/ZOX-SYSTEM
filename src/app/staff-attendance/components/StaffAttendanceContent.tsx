@@ -153,6 +153,83 @@ const roleStyles: Record<string, string> = {
   Technician: 'text-warning',
 };
 
+interface ShiftRowProps {
+  staff: StaffShift;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+function ShiftRow({ staff, isOpen, onToggle }: ShiftRowProps) {
+  return (
+    <div className="border border-border rounded-xl bg-muted/20 overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-muted/40 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+          <span className="text-xs font-bold text-primary">
+            {staff.name
+              .split(' ')
+              .filter(Boolean)
+              .map((w) => w[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground truncate">{staff.name}</p>
+          <p className={`text-xs font-medium ${roleStyles[staff.role] || 'text-muted-foreground'}`}>
+            {staff.role}
+          </p>
+        </div>
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Clock size={12} />
+          <span className="font-tabular">
+            {staff.shiftStart} – {staff.shiftEnd}
+          </span>
+        </div>
+        <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MapPin size={12} />
+          <span>{staff.location}</span>
+        </div>
+        <span className={`status-badge ${statusStyles[staff.status]}`}>{staff.status}</span>
+        {isOpen ? (
+          <ChevronUp size={16} className="text-muted-foreground" />
+        ) : (
+          <ChevronDown size={16} className="text-muted-foreground" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-4 pt-1 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Shift</p>
+            <p className="text-foreground font-medium font-tabular">
+              {staff.shiftStart} – {staff.shiftEnd}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Check-in</p>
+            <p className="text-foreground font-medium font-tabular">{staff.checkIn ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Location</p>
+            <p className="text-foreground font-medium">{staff.location}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Status</p>
+            <p
+              className={`font-medium ${staff.status === 'Late' ? 'text-warning' : staff.status === 'Absent' ? 'text-danger' : staff.status === 'On Time' ? 'text-accent' : 'text-muted-foreground'}`}
+            >
+              {staff.status === 'Late' ? `${staff.minutesLate} min late` : staff.status}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StaffAttendanceContent() {
   const router = useRouter();
   const { user, ready } = useAuth();
@@ -198,80 +275,6 @@ export default function StaffAttendanceContent() {
   const late = initialStaff.filter((s) => s.status === 'Late').length;
   const absent = initialStaff.filter((s) => s.status === 'Absent').length;
   const present = initialStaff.filter((s) => s.status !== 'Off Duty').length;
-
-  const ShiftRow = ({ staff }: { staff: StaffShift }) => {
-    const isOpen = expanded === staff.id;
-    return (
-      <div className="border border-border rounded-xl bg-muted/20 overflow-hidden">
-        <button
-          onClick={() => setExpanded(isOpen ? null : staff.id)}
-          className="w-full flex items-center gap-3 p-4 text-left hover:bg-muted/40 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-bold text-primary">
-              {staff.name
-                .split(' ')
-                .filter(Boolean)
-                .map((w) => w[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{staff.name}</p>
-            <p
-              className={`text-xs font-medium ${roleStyles[staff.role] || 'text-muted-foreground'}`}
-            >
-              {staff.role}
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock size={12} />
-            <span className="font-tabular">
-              {staff.shiftStart} – {staff.shiftEnd}
-            </span>
-          </div>
-          <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin size={12} />
-            <span>{staff.location}</span>
-          </div>
-          <span className={`status-badge ${statusStyles[staff.status]}`}>{staff.status}</span>
-          {isOpen ? (
-            <ChevronUp size={16} className="text-muted-foreground" />
-          ) : (
-            <ChevronDown size={16} className="text-muted-foreground" />
-          )}
-        </button>
-        {isOpen && (
-          <div className="px-4 pb-4 pt-1 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Shift</p>
-              <p className="text-foreground font-medium font-tabular">
-                {staff.shiftStart} – {staff.shiftEnd}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Check-in</p>
-              <p className="text-foreground font-medium font-tabular">{staff.checkIn ?? '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Location</p>
-              <p className="text-foreground font-medium">{staff.location}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Status</p>
-              <p
-                className={`font-medium ${staff.status === 'Late' ? 'text-warning' : staff.status === 'Absent' ? 'text-danger' : staff.status === 'On Time' ? 'text-accent' : 'text-muted-foreground'}`}
-              >
-                {staff.status === 'Late' ? `${staff.minutesLate} min late` : staff.status}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">
@@ -365,7 +368,12 @@ export default function StaffAttendanceContent() {
       {/* Staff list */}
       <div className="space-y-2">
         {initialStaff.map((staff) => (
-          <ShiftRow key={staff.id} staff={staff} />
+          <ShiftRow
+            key={staff.id}
+            staff={staff}
+            isOpen={expanded === staff.id}
+            onToggle={() => setExpanded(expanded === staff.id ? null : staff.id)}
+          />
         ))}
       </div>
     </div>

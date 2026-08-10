@@ -148,10 +148,11 @@ export default function ActiveSessionsList() {
           <h2 className="text-base font-semibold text-foreground">Active Sessions</h2>
           <p className="text-xs text-muted-foreground">{sessions.length} sessions running now</p>
         </div>
-        <Link href="/live-sessions">
-          <button className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
-            Manage All <ChevronRight size={14} />
-          </button>
+        <Link
+          href="/live-sessions"
+          className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+        >
+          Manage All <ChevronRight size={14} />
         </Link>
       </div>
 
@@ -181,8 +182,12 @@ export default function ActiveSessionsList() {
           <tbody>
             {sessions.map((session) => {
               const elapsedMin = elapsed[session.id] || session.startMinutesAgo;
+              const snapshotSessionCost = Math.round(
+                (session.startMinutesAgo / 60) * session.hourlyRate
+              );
+              const productsBill = Math.max(0, session.billTotal - snapshotSessionCost);
               const sessionCost = Math.round((elapsedMin / 60) * session.hourlyRate);
-              const total = sessionCost + session.products * 15;
+              const total = sessionCost + productsBill;
               const isNearEnd =
                 session.sessionType === 'fixed' && session.fixedDurationMinutes
                   ? elapsedMin >= session.fixedDurationMinutes - 10
@@ -259,13 +264,12 @@ export default function ActiveSessionsList() {
                       >
                         <Pause size={13} />
                       </button>
-                      <Link href="/live-sessions">
-                        <button
-                          title="End session & pay"
-                          className="p-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
-                        >
-                          <CreditCard size={13} />
-                        </button>
+                      <Link
+                        href="/live-sessions"
+                        title="End session & pay"
+                        className="p-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                      >
+                        <CreditCard size={13} />
                       </Link>
                     </div>
                   </td>

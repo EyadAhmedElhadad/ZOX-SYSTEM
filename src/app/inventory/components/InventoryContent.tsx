@@ -151,7 +151,7 @@ export const mockInventory: InventoryItem[] = [
     unitPrice: 1600,
     supplier: 'Gamers Zone',
     lastRestocked: '2026-07-15',
-    status: 'In Stock',
+    status: 'Low Stock',
   },
   {
     id: 'inv-012',

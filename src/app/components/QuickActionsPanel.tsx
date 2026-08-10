@@ -66,15 +66,15 @@ export default function QuickActionsPanel() {
       <h2 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h2>
       <div className="grid grid-cols-2 gap-2">
         {actions?.map((action) => (
-          <Link key={action?.id} href={action?.href}>
-            <button
-              className={`w-full flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 active:scale-95 ${action?.bg}`}
-            >
-              <span className={action?.color}>{action?.icon}</span>
-              <span className={`text-xs font-semibold ${action?.color} text-center leading-tight`}>
-                {action?.label}
-              </span>
-            </button>
+          <Link
+            key={action?.id}
+            href={action?.href}
+            className={`w-full flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 active:scale-95 ${action?.bg}`}
+          >
+            <span className={action?.color}>{action?.icon}</span>
+            <span className={`text-xs font-semibold ${action?.color} text-center leading-tight`}>
+              {action?.label}
+            </span>
           </Link>
         ))}
       </div>

@@ -211,10 +211,11 @@ export default function CustomerDashboardContent() {
                 <h2 className="text-base font-semibold text-foreground">Upcoming Bookings</h2>
                 <p className="text-xs text-muted-foreground">Your reserved sessions</p>
               </div>
-              <Link href="/reservations">
-                <button className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
-                  View all <ChevronRight size={14} />
-                </button>
+              <Link
+                href="/reservations"
+                className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+              >
+                View all <ChevronRight size={14} />
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -296,11 +296,12 @@ export default function RoomStatusGrid() {
               )}
 
               {room.status === 'available' && (
-                <Link href="/reservations">
-                  <button className="w-full mt-1 py-1.5 bg-accent/10 border border-accent/20 text-accent text-xs font-semibold rounded-lg hover:bg-accent/20 transition-colors">
-                    <Zap size={11} className="inline mr-1" />
-                    Quick Assign
-                  </button>
+                <Link
+                  href="/reservations"
+                  className="w-full mt-1 py-1.5 bg-accent/10 border border-accent/20 text-accent text-xs font-semibold rounded-lg hover:bg-accent/20 transition-colors flex items-center justify-center"
+                >
+                  <Zap size={11} className="mr-1" />
+                  Quick Assign
                 </Link>
               )}
             </div>

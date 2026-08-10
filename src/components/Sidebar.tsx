@@ -182,6 +182,135 @@ interface SidebarProps {
   role?: 'owner' | 'manager' | 'staff' | 'customer';
 }
 
+interface SidebarContentProps {
+  collapsed: boolean;
+  groupedNav: Record<string, NavItem[]>;
+  isActive: (href: string) => boolean;
+  roleLabel: string;
+  roleColor: string;
+  displayName: string;
+  displayInitials: string;
+  navRef: React.RefObject<HTMLElement | null>;
+  onNavScroll: () => void;
+  onSwitchAccount: () => void;
+  onSignOut: () => void;
+  onToggleCollapsed: () => void;
+}
+
+function SidebarContent({
+  collapsed,
+  groupedNav,
+  isActive,
+  roleLabel,
+  roleColor,
+  displayName,
+  displayInitials,
+  navRef,
+  onNavScroll,
+  onSwitchAccount,
+  onSignOut,
+  onToggleCollapsed,
+}: SidebarContentProps) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div
+        className={`flex items-center border-b border-border transition-all duration-300 ${collapsed ? 'justify-center px-3 py-4' : 'px-4 py-4 gap-3'}`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <AppLogo size={32} />
+          {!collapsed && (
+            <div className="min-w-0">
+              <span className="font-bold text-base text-foreground tracking-tight">Zoox</span>
+              <p className="text-xs text-muted-foreground truncate">PlayStation Center</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Role badge */}
+      {!collapsed && (
+        <div className="px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-primary">{displayInitials}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
+              <p className={`text-xs font-medium ${roleColor}`}>{roleLabel}</p>
+            </div>
+            <Bell size={14} className="ml-auto text-muted-foreground flex-shrink-0" />
+          </div>
+        </div>
+      )}
+
+      {/* Nav */}
+      <nav
+        ref={navRef}
+        onScroll={onNavScroll}
+        className="flex-1 overflow-y-auto scrollbar-thin py-3 px-2"
+      >
+        {Object.entries(groupedNav).map(([section, items], sectionIdx) => (
+          <div key={`section-${section}`} className={sectionIdx > 0 ? 'mt-4' : ''}>
+            {!collapsed && (
+              <p className="section-label px-3 mb-1.5">{sectionLabels[section] || section}</p>
+            )}
+            {items.map((item) => (
+              <Link
+                key={`nav-${item.href}`}
+                href={item.href === '/staff-dashboard' ? '/' : item.href}
+                className={`nav-item mb-0.5 relative ${isActive(item.href) ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`}
+                title={collapsed ? item.label : undefined}
+              >
+                <span className="flex-shrink-0">{item.icon}</span>
+                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && item.badge && item.badge > 0 ? (
+                  <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                    {item.badge}
+                  </span>
+                ) : null}
+                {collapsed && item.badge && item.badge > 0 ? (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                ) : null}
+              </Link>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      {/* Bottom */}
+      <div className="border-t border-border p-2">
+        <button
+          onClick={onSwitchAccount}
+          className={`nav-item w-full mb-1 ${collapsed ? 'justify-center' : ''}`}
+          title={collapsed ? 'Switch Account' : undefined}
+        >
+          <Repeat size={18} />
+          {!collapsed && <span>Switch Account</span>}
+        </button>
+        <div className="flex items-center gap-2 mb-2">
+          <ThemeToggle />
+          <button
+            onClick={onSignOut}
+            className={`nav-item flex-1 ${collapsed ? 'justify-center' : ''}`}
+            title={collapsed ? 'Sign Out' : undefined}
+          >
+            <LogOut size={18} />
+            {!collapsed && <span>Sign Out</span>}
+          </button>
+        </div>
+        <button
+          onClick={onToggleCollapsed}
+          className={`nav-item w-full ${collapsed ? 'justify-center' : ''}`}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          {!collapsed && <span>Collapse</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -253,105 +382,6 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
     router.push('/sign-up-login-screen');
   };
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div
-        className={`flex items-center border-b border-border transition-all duration-300 ${collapsed ? 'justify-center px-3 py-4' : 'px-4 py-4 gap-3'}`}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <AppLogo size={32} />
-          {!collapsed && (
-            <div className="min-w-0">
-              <span className="font-bold text-base text-foreground tracking-tight">Zoox</span>
-              <p className="text-xs text-muted-foreground truncate">PlayStation Center</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Role badge */}
-      {!collapsed && (
-        <div className="px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-primary">{displayInitials}</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
-              <p className={`text-xs font-medium ${roleColor}`}>{roleLabel}</p>
-            </div>
-            <Bell size={14} className="ml-auto text-muted-foreground flex-shrink-0" />
-          </div>
-        </div>
-      )}
-
-      {/* Nav */}
-      <nav
-        ref={navRef}
-        onScroll={handleNavScroll}
-        className="flex-1 overflow-y-auto scrollbar-thin py-3 px-2"
-      >
-        {Object.entries(groupedNav).map(([section, items], sectionIdx) => (
-          <div key={`section-${section}`} className={sectionIdx > 0 ? 'mt-4' : ''}>
-            {!collapsed && (
-              <p className="section-label px-3 mb-1.5">{sectionLabels[section] || section}</p>
-            )}
-            {items.map((item) => (
-              <Link
-                key={`nav-${item.href}`}
-                href={item.href === '/staff-dashboard' ? '/' : item.href}
-                className={`nav-item mb-0.5 relative ${isActive(item.href) ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`}
-                title={collapsed ? item.label : undefined}
-              >
-                <span className="flex-shrink-0">{item.icon}</span>
-                {!collapsed && <span className="truncate">{item.label}</span>}
-                {!collapsed && item.badge && item.badge > 0 ? (
-                  <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
-                    {item.badge}
-                  </span>
-                ) : null}
-                {collapsed && item.badge && item.badge > 0 ? (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-                ) : null}
-              </Link>
-            ))}
-          </div>
-        ))}
-      </nav>
-
-      {/* Bottom */}
-      <div className="border-t border-border p-2">
-        <button
-          onClick={() => setSwitchOpen(true)}
-          className={`nav-item w-full mb-1 ${collapsed ? 'justify-center' : ''}`}
-          title={collapsed ? 'Switch Account' : undefined}
-        >
-          <Repeat size={18} />
-          {!collapsed && <span>Switch Account</span>}
-        </button>
-        <div className="flex items-center gap-2 mb-2">
-          <ThemeToggle />
-          <button
-            onClick={handleSignOut}
-            className={`nav-item flex-1 ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? 'Sign Out' : undefined}
-          >
-            <LogOut size={18} />
-            {!collapsed && <span>Sign Out</span>}
-          </button>
-        </div>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className={`nav-item w-full ${collapsed ? 'justify-center' : ''}`}
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          {!collapsed && <span>Collapse</span>}
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <>
       {switchOpen && <AccountSwitcher onClose={() => setSwitchOpen(false)} />}
@@ -374,7 +404,20 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
             >
               <X size={18} />
             </button>
-            <SidebarContent />
+            <SidebarContent
+              collapsed={collapsed}
+              groupedNav={groupedNav}
+              isActive={isActive}
+              roleLabel={roleLabel}
+              roleColor={roleColor}
+              displayName={displayName}
+              displayInitials={displayInitials}
+              navRef={navRef}
+              onNavScroll={handleNavScroll}
+              onSwitchAccount={() => setSwitchOpen(true)}
+              onSignOut={handleSignOut}
+              onToggleCollapsed={() => setCollapsed(!collapsed)}
+            />
           </div>
         </div>
       )}
@@ -383,7 +426,20 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
       <aside
         className={`hidden lg:flex flex-col bg-card border-r border-border h-screen sticky top-0 transition-all duration-300 ease-in-out flex-shrink-0 ${collapsed ? 'w-16' : 'w-60'}`}
       >
-        <SidebarContent />
+        <SidebarContent
+          collapsed={collapsed}
+          groupedNav={groupedNav}
+          isActive={isActive}
+          roleLabel={roleLabel}
+          roleColor={roleColor}
+          displayName={displayName}
+          displayInitials={displayInitials}
+          navRef={navRef}
+          onNavScroll={handleNavScroll}
+          onSwitchAccount={() => setSwitchOpen(true)}
+          onSignOut={handleSignOut}
+          onToggleCollapsed={() => setCollapsed(!collapsed)}
+        />
       </aside>
     </>
   );

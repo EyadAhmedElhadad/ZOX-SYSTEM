@@ -436,6 +436,7 @@ export default function ReservationsContent() {
 
   const handleAddReservation = (newRes: Reservation) => {
     setReservations((prev) => [newRes, ...prev]);
+    setDateFilter(newRes.date);
     setDrawerOpen(false);
   };
 

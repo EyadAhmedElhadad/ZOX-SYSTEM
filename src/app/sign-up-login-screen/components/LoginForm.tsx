@@ -62,7 +62,13 @@ export default function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
   };
 
   const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
+    try {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
+    } catch {
+      /* clipboard unavailable */
+    }
     setCopiedField(key);
     setTimeout(() => setCopiedField(null), 2000);
   };
