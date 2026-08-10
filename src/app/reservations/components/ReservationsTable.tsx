@@ -183,7 +183,7 @@ export default function ReservationsTable({
                         {res.room}
                       </p>
                       <span
-                        className={`text-xs ${res.roomType === 'VIP' ? 'text-warning' : res.roomType === 'Premium' ? 'text-info' : 'text-muted-foreground'}`}
+                        className={`text-xs ${res.roomType === 'VIP' ? 'text-vip' : res.roomType === 'Premium' ? 'text-info' : 'text-muted-foreground'}`}
                       >
                         {res.roomType}
                       </span>

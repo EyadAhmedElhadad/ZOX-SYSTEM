@@ -28,8 +28,8 @@ const roomTypeColors: Record<string, { badge: string; glow: string }> = {
   Standard: { badge: 'bg-muted text-muted-foreground', glow: '' },
   Premium: { badge: 'bg-info/10 text-info border border-info/20', glow: 'hover:shadow-info/10' },
   VIP: {
-    badge: 'bg-warning/10 text-warning border border-warning/20',
-    glow: 'hover:shadow-warning/10',
+    badge: 'bg-vip/10 text-vip border border-vip/20',
+    glow: 'hover:shadow-vip/10',
   },
 };
 
@@ -109,6 +109,12 @@ export default function SessionsGrid({
             key={session.id}
             className={`card-base border transition-all duration-200 hover:border-primary/30 flex flex-col ${
               session.status === 'paused' ? 'opacity-70' : ''
+            } ${
+              session.roomType === 'VIP'
+                ? 'room-vip-bg'
+                : session.roomType === 'Premium'
+                  ? 'room-premium-bg'
+                  : 'room-standard-bg'
             } ${isOvertime ? 'border-danger/40' : isNearEnd ? 'border-warning/40' : ''}`}
           >
             {/* Card header */}

@@ -40,6 +40,7 @@ module.exports = {
         danger: 'var(--danger)',
         success: 'var(--success)',
         info: 'var(--info)',
+        vip: 'var(--vip)',
       },
       borderRadius: {
         DEFAULT: 'var(--radius)',

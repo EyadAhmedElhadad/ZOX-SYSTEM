@@ -24,6 +24,7 @@
   --danger: #ef4444;
   --success: #10b981;
   --info: #3b82f6;
+  --vip: #ffd700;
   --session-active: #10b981;
   --session-waiting: #f59e0b;
   --session-paused: #6366f1;
@@ -52,7 +53,8 @@
   --warning: #d97706;
   --danger: #dc2626;
   --success: #0d9e6e;
-  --info: #2563eb;
+  --info: #3b82f6;
+  --vip: #ffd700;
 }
 
 @layer base {
@@ -155,6 +157,21 @@
   .room-maintenance-bg {
     background: linear-gradient(135deg, rgba(107, 114, 128, 0.08) 0%, transparent 100%);
     border-color: rgba(107, 114, 128, 0.3);
+  }
+
+  .room-vip-bg {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.35) 0%, rgba(255, 215, 0, 0.12) 100%);
+    border-color: rgba(255, 215, 0, 0.5);
+  }
+
+  .room-premium-bg {
+    background: linear-gradient(135deg, rgba(0, 0, 128, 0.5) 0%, rgba(0, 0, 128, 0.2) 100%);
+    border-color: rgba(0, 0, 128, 0.65);
+  }
+
+  .room-standard-bg {
+    background: linear-gradient(135deg, rgba(128, 0, 32, 0.25) 0%, rgba(128, 0, 32, 0.08) 100%);
+    border-color: rgba(128, 0, 32, 0.4);
   }
 
   .fade-in {

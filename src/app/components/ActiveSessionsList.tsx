@@ -126,7 +126,7 @@ function formatElapsed(minutes: number): string {
 const typeColors: Record<string, string> = {
   Standard: 'text-muted-foreground bg-muted',
   Premium: 'text-info bg-info/10',
-  VIP: 'text-warning bg-warning/10',
+  VIP: 'text-vip bg-vip/10',
 };
 
 export default function ActiveSessionsList() {

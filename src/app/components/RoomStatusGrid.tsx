@@ -161,10 +161,10 @@ const statusConfig: Record<
   },
 };
 
-const typeConfig: Record<RoomType, { color: string; bg: string }> = {
-  Standard: { color: 'text-muted-foreground', bg: 'bg-muted' },
-  Premium: { color: 'text-info', bg: 'bg-info/10' },
-  VIP: { color: 'text-warning', bg: 'bg-warning/10' },
+const typeConfig: Record<RoomType, { color: string; bg: string; cardClass?: string }> = {
+  Standard: { color: 'text-muted-foreground', bg: 'bg-muted', cardClass: 'room-standard-bg' },
+  Premium: { color: 'text-info', bg: 'bg-info/10', cardClass: 'room-premium-bg' },
+  VIP: { color: 'text-vip', bg: 'bg-vip/10', cardClass: 'room-vip-bg' },
 };
 
 function formatElapsed(minutes: number): string {
@@ -231,7 +231,7 @@ export default function RoomStatusGrid() {
           return (
             <div
               key={room.id}
-              className={`border rounded-xl p-3 transition-all duration-200 cursor-pointer hover:border-primary/40 ${sc.cardClass}`}
+              className={`border rounded-xl p-3 transition-all duration-200 cursor-pointer hover:border-primary/40 ${sc.cardClass} ${tc.cardClass ?? ''}`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
