@@ -179,6 +179,7 @@ export default function ReservationDrawer({ onClose, onSave }: ReservationDrawer
                 className={`input-field ${errors.room ? 'border-danger' : ''}`}
                 {...register('room', { required: 'Room selection is required' })}
                 onChange={(e) => {
+                  register('room').onChange(e);
                   setSelectedRoom(rooms.find((r) => r.name === e.target.value) || null);
                 }}
               >

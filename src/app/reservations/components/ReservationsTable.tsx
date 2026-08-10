@@ -62,8 +62,9 @@ export default function ReservationsTable({
       : String(bv).localeCompare(String(av));
   });
 
-  const totalPages = Math.ceil(sorted.length / perPage);
-  const paginated = sorted.slice((page - 1) * perPage, page * perPage);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const safePage = Math.min(page, totalPages);
+  const paginated = sorted.slice((safePage - 1) * perPage, safePage * perPage);
 
   const SortHeader = ({ label, sKey }: { label: string; sKey: SortKey }) => (
     <button
@@ -327,7 +328,7 @@ export default function ReservationsTable({
         <div className="flex items-center gap-1">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
+            disabled={safePage === 1}
             className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
           >
             Prev
@@ -337,7 +338,7 @@ export default function ReservationsTable({
               key={`page-${p}`}
               onClick={() => setPage(p)}
               className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                page === p
+                safePage === p
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
@@ -347,7 +348,7 @@ export default function ReservationsTable({
           ))}
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            disabled={safePage === totalPages}
             className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
           >
             Next

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Pause, Play, CreditCard, Gamepad2, Users, Clock, Zap } from 'lucide-react';
 import type { LiveSession } from './LiveSessionsContent';
 
@@ -44,9 +44,19 @@ export default function SessionsGrid({
     Object.fromEntries(sessions.map((s) => [s.id, s.startMinutesAgo]))
   );
 
+  const pausedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    pausedRef.current = new Set(sessions.filter((s) => s.status === 'paused').map((s) => s.id));
+  }, [sessions]);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setElapsed((prev) => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, v + 1])));
+      setElapsed((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).map(([k, v]) => (pausedRef.current.has(k) ? [k, v] : [k, v + 1]))
+        )
+      );
     }, 60000);
     return () => clearInterval(interval);
   }, []);

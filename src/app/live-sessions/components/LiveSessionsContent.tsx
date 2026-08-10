@@ -78,9 +78,7 @@ export default function LiveSessionsContent() {
   };
 
   const handleQuickAction = (updated: QuickActionTarget) => {
-    setSessions((prev) =>
-      prev.map((s) => (s.id === updated.id ? (updated as unknown as LiveSession) : s))
-    );
+    setSessions((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
     setQuickActionTarget(null);
   };
 
@@ -90,9 +88,7 @@ export default function LiveSessionsContent() {
   };
 
   const handleZoneQuickAction = (updated: QuickActionTarget) => {
-    setZones((prev) =>
-      prev.map((z) => (z.id === updated.id ? (updated as unknown as ZoneSession) : z))
-    );
+    setZones((prev) => prev.map((z) => (z.id === updated.id ? { ...z, ...updated } : z)));
     setZoneQuickActionTarget(null);
   };
 
