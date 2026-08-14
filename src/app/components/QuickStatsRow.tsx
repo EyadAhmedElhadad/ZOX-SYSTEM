@@ -19,9 +19,9 @@ const stats = [
     value: '2',
     sub: 'ready to assign',
     icon: <DoorOpen size={20} />,
-    color: 'text-success',
-    bg: 'bg-success/10',
-    border: 'border-success/20',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+    border: 'border-primary/20',
     trend: null,
   },
   {
@@ -41,9 +41,9 @@ const stats = [
     value: '2,840',
     sub: 'EGP since shift start',
     icon: <TrendingUp size={20} />,
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    border: 'border-primary/20',
+    color: 'text-accent',
+    bg: 'bg-accent/10',
+    border: 'border-accent/20',
     trend: '+12% vs yesterday',
   },
   {
@@ -74,19 +74,18 @@ export default function QuickStatsRow() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
       {stats?.map((stat) => (
-        <div
-          key={stat?.id}
-          className={`card-base p-4 border ${stat?.border} transition-all duration-200 hover:border-opacity-60`}
-        >
+        <div key={stat?.id} className="glass-panel glow-hover rounded-xl p-4">
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2 rounded-lg ${stat?.bg}`}>
+            <div className={`p-2 rounded-full ring-1 ${stat?.bg} ${stat?.border}`}>
               <span className={stat?.color}>{stat?.icon}</span>
             </div>
             {stat?.trend && <span className="text-xs text-accent font-medium">{stat?.trend}</span>}
           </div>
-          <p className={`text-2xl font-bold font-tabular ${stat?.color}`}>{stat?.value}</p>
-          <p className="text-xs font-semibold text-foreground mt-0.5">{stat?.label}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{stat?.sub}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {stat?.label}
+          </p>
+          <p className={`text-2xl font-bold font-tabular mt-1 ${stat?.color}`}>{stat?.value}</p>
+          <p className="text-xs text-muted-foreground mt-1">{stat?.sub}</p>
         </div>
       ))}
     </div>

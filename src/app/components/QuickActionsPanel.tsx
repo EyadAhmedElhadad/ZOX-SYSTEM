@@ -7,6 +7,7 @@ import {
   Gamepad2,
   PackageSearch,
   AlertCircle,
+  ChevronRight,
 } from 'lucide-react';
 
 const actions = [
@@ -62,19 +63,22 @@ const actions = [
 
 export default function QuickActionsPanel() {
   return (
-    <div className="card-base p-4">
+    <div className="glass-panel rounded-xl p-4">
       <h2 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h2>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-2">
         {actions?.map((action) => (
           <Link
             key={action?.id}
             href={action?.href}
-            className={`w-full flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 active:scale-95 ${action?.bg}`}
+            className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all duration-150 active:scale-95 ${action?.bg}`}
           >
-            <span className={action?.color}>{action?.icon}</span>
-            <span className={`text-xs font-semibold ${action?.color} text-center leading-tight`}>
+            <span className={`flex-shrink-0 p-2 rounded-lg bg-black/20 ${action?.color}`}>
+              {action?.icon}
+            </span>
+            <span className={`text-xs font-semibold ${action?.color} flex-1 leading-tight`}>
               {action?.label}
             </span>
+            <ChevronRight size={14} className="text-muted-foreground" />
           </Link>
         ))}
       </div>

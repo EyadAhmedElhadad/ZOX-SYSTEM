@@ -1,6 +1,15 @@
 'use client';
 import React, { useState } from 'react';
-import { ArrowUpDown, Eye, PlayCircle, Ban, UserCheck, MoreHorizontal, Star } from 'lucide-react';
+import {
+  ArrowUpDown,
+  Eye,
+  PlayCircle,
+  Ban,
+  UserCheck,
+  MoreHorizontal,
+  Star,
+  Users,
+} from 'lucide-react';
 import type { Reservation, ReservationStatus } from './ReservationsContent';
 import { toast } from 'sonner';
 
@@ -15,12 +24,10 @@ const statusStyles: Record<ReservationStatus, { bg: string; text: string; dot: s
   Late: { bg: 'bg-warning/10', text: 'text-warning', dot: 'bg-warning' },
 };
 
-const customerStatusStyles: Record<string, string> = {
-  New: 'text-muted-foreground bg-muted',
-  Regular: 'text-info bg-info/10',
-  Loyal: 'text-accent bg-accent/10',
-  VIP: 'text-warning bg-warning/10',
-  'Low Reliability': 'text-danger bg-danger/10',
+const roomBadgeStyles: Record<Reservation['roomType'], string> = {
+  VIP: 'text-[#e9c400] bg-[#e9c400]/10 border border-[#e9c400]/25',
+  Premium: 'text-info bg-info/10 border border-info/25',
+  Standard: 'text-muted-foreground bg-muted border border-border',
 };
 
 interface ReservationsTableProps {
@@ -32,6 +39,14 @@ interface ReservationsTableProps {
 
 type SortKey = 'customer' | 'room' | 'game' | 'date' | 'time' | 'status';
 type SortDir = 'asc' | 'desc';
+
+const initials = (name: string) =>
+  name
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 export default function ReservationsTable({
   reservations,
@@ -69,7 +84,7 @@ export default function ReservationsTable({
   const SortHeader = ({ label, sKey }: { label: string; sKey: SortKey }) => (
     <button
       onClick={() => handleSort(sKey)}
-      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors group"
+      className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors group"
     >
       {label}
       <ArrowUpDown
@@ -87,7 +102,7 @@ export default function ReservationsTable({
 
   if (reservations.length === 0) {
     return (
-      <div className="card-base p-16 flex flex-col items-center justify-center text-center">
+      <div className="glass-panel rounded-xl p-16 flex flex-col items-center justify-center text-center">
         <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
           <Eye size={28} className="text-muted-foreground" />
         </div>
@@ -102,45 +117,28 @@ export default function ReservationsTable({
   }
 
   return (
-    <div className="card-base overflow-hidden">
+    <div className="glass-panel rounded-xl overflow-hidden">
       <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-full min-w-[900px]">
+        <table className="w-full min-w-[800px]">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
-              {!isCustomer && (
-                <th className="text-left px-4 py-3 w-8">
-                  <input type="checkbox" className="w-3.5 h-3.5 accent-primary" />
-                </th>
-              )}
+            <tr className="border-b border-border bg-[#051424]/60">
               <th className="text-left px-4 py-3">
                 <SortHeader label="Customer" sKey="customer" />
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">
-                Phone
               </th>
               <th className="text-left px-4 py-3">
                 <SortHeader label="Room" sKey="room" />
               </th>
               <th className="text-left px-4 py-3">
-                <SortHeader label="Game" sKey="game" />
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">
-                Players
-              </th>
-              <th className="text-left px-4 py-3">
                 <SortHeader label="Date" sKey="date" />
               </th>
-              <th className="text-left px-4 py-3">
-                <SortHeader label="Time" sKey="time" />
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">
-                Duration
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Party
               </th>
               <th className="text-left px-4 py-3">
                 <SortHeader label="Status" sKey="status" />
               </th>
               {!isCustomer && (
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Actions
                 </th>
               )}
@@ -152,59 +150,46 @@ export default function ReservationsTable({
               return (
                 <tr
                   key={res.id}
-                  className="border-b border-border/50 hover:bg-muted/20 transition-colors group"
+                  className="border-b border-border/50 hover:bg-[#1c2b3c] transition-colors group"
                 >
-                  {!isCustomer && (
-                    <td className="px-4 py-3">
-                      <input type="checkbox" className="w-3.5 h-3.5 accent-primary" />
-                    </td>
-                  )}
                   <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{res.customer}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold">{initials(res.customer)}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {res.customer}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-data-mono">
+                          #RES-{res.id.replace('res-', '')}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col items-start gap-1">
+                      <p className="text-sm font-medium text-foreground">{res.room}</p>
                       <span
-                        className={`text-xs font-medium px-1.5 py-0.5 rounded ${customerStatusStyles[res.customerStatus] || 'text-muted-foreground bg-muted'}`}
+                        className={`text-xs px-2 py-0.5 rounded-full ${roomBadgeStyles[res.roomType]}`}
                       >
-                        {res.customerStatus}
+                        {res.roomType === 'VIP' ? 'VIP Lounge' : res.roomType}
                       </span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-sm text-muted-foreground font-tabular">{res.phone}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {res.category === 'billiards'
-                          ? '🎱'
-                          : res.category === 'cafe'
-                            ? '☕'
-                            : '🎮'}{' '}
-                        {res.room}
-                      </p>
-                      <span
-                        className={`text-xs ${res.roomType === 'VIP' ? 'text-vip' : res.roomType === 'Premium' ? 'text-info' : 'text-muted-foreground'}`}
-                      >
-                        {res.roomType}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm text-foreground">{res.game}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-tabular text-foreground">{res.players}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-tabular text-foreground">{res.date.slice(5)}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-tabular font-semibold text-foreground">{res.time}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm text-muted-foreground">
-                      {res.duration ? `${res.duration}min` : 'Open'}
+                    <p className="text-xs font-data-mono text-muted-foreground">
+                      {res.date.slice(5)}
                     </p>
+                    <p className="text-sm font-data-mono font-semibold text-foreground">
+                      {res.time}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-1.5 text-sm text-foreground">
+                      <Users size={14} className="text-muted-foreground" />
+                      <span className="font-tabular">{res.players}</span>
+                    </span>
                   </td>
                   <td className="px-4 py-3 relative">
                     {isCustomer ? (
@@ -305,8 +290,7 @@ export default function ReservationsTable({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-muted/20">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-[#051424]/40">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Show</span>
           <select

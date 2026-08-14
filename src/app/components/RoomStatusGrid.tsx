@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Gamepad2, Users, Clock, Zap, Tv2, Star } from 'lucide-react';
+import { Gamepad2, Users, Clock, Zap, Star } from 'lucide-react';
 import Link from 'next/link';
 
 type RoomStatus = 'available' | 'occupied' | 'reserved' | 'maintenance';
@@ -201,8 +201,8 @@ export default function RoomStatusGrid() {
   };
 
   return (
-    <div className="card-base p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass-panel rounded-xl p-4">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
           <h2 className="text-base font-semibold text-foreground">Room Status</h2>
           <p className="text-xs text-muted-foreground">All gaming rooms — live view</p>
@@ -212,10 +212,10 @@ export default function RoomStatusGrid() {
             <button
               key={`filter-${f}`}
               onClick={() => setFilter(f)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 ${
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 ${
                 filter === f
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                  : 'bg-muted text-muted-foreground hover:text-foreground hover:border-primary/30 border border-transparent'
               }`}
             >
               {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)} ({counts[f]})
@@ -224,35 +224,33 @@ export default function RoomStatusGrid() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((room) => {
           const sc = statusConfig[room.status];
           const tc = typeConfig[room.type];
           return (
             <div
               key={room.id}
-              className={`border rounded-xl p-3 transition-all duration-200 cursor-pointer hover:border-primary/40 ${sc.cardClass} ${tc.cardClass ?? ''}`}
+              className={`glass-panel rounded-xl p-4 transition-all duration-200 cursor-pointer hover:border-primary/40 ${sc.cardClass} ${tc.cardClass ?? ''}`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-bold text-foreground">{room.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`status-badge text-xs ${tc.bg} ${tc.color}`}>{room.type}</span>
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {room.psModel} · {room.type}
+                  </p>
                 </div>
                 <div
                   className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc.bg} ${sc.text}`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${sc.dot} ${room.status === 'occupied' ? 'animate-pulse' : ''}`}
+                  />
                   {sc.label}
                 </div>
               </div>
 
               <div className="space-y-1.5 mb-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Tv2 size={11} />
-                  <span className="font-medium text-foreground">{room.psModel}</span>
-                </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Users size={11} />
                   <span>Max {room.capacity} players</span>
@@ -265,14 +263,14 @@ export default function RoomStatusGrid() {
               </div>
 
               {room.status === 'occupied' && room.currentCustomer && (
-                <div className="bg-background/50 rounded-lg p-2 space-y-1">
+                <div className="bg-background/60 rounded-lg p-2 space-y-1 border border-border/50">
                   <p className="text-xs font-semibold text-foreground truncate">
                     {room.currentCustomer}
                   </p>
                   {room.game && <p className="text-xs text-muted-foreground">{room.game}</p>}
                   <div className="flex items-center gap-1 text-xs text-accent">
                     <Clock size={10} className="session-timer-pulse" />
-                    <span className="font-tabular font-semibold">
+                    <span className="font-data-mono font-semibold">
                       {formatElapsed(room.elapsedMinutes || 0)}
                     </span>
                     <span className="text-muted-foreground">since {room.sessionStart}</span>
@@ -281,7 +279,7 @@ export default function RoomStatusGrid() {
               )}
 
               {room.status === 'reserved' && room.currentCustomer && (
-                <div className="bg-background/50 rounded-lg p-2">
+                <div className="bg-background/60 rounded-lg p-2 border border-warning/20">
                   <p className="text-xs font-semibold text-foreground truncate">
                     {room.currentCustomer}
                   </p>
@@ -290,7 +288,7 @@ export default function RoomStatusGrid() {
               )}
 
               {room.status === 'maintenance' && room.note && (
-                <div className="bg-danger/5 rounded-lg p-2">
+                <div className="bg-danger/5 rounded-lg p-2 border border-danger/10">
                   <p className="text-xs text-danger">{room.note}</p>
                 </div>
               )}
@@ -298,7 +296,7 @@ export default function RoomStatusGrid() {
               {room.status === 'available' && (
                 <Link
                   href="/reservations"
-                  className="w-full mt-1 py-1.5 bg-accent/10 border border-accent/20 text-accent text-xs font-semibold rounded-lg hover:bg-accent/20 transition-colors flex items-center justify-center"
+                  className="w-full mt-1 py-1.5 bg-accent/10 border border-accent/20 text-accent text-xs font-semibold rounded-lg hover:bg-accent/20 hover:shadow-lg hover:shadow-accent/10 transition-all flex items-center justify-center"
                 >
                   <Zap size={11} className="mr-1" />
                   Quick Assign

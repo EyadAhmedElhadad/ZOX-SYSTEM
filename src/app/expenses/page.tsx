@@ -1,14 +1,11 @@
 import React from 'react';
 import AppLayout from '@/components/AppLayout';
-import PlaceholderContent from '@/components/ui/PlaceholderContent';
+import ExpensesContent from './components/ExpensesContent';
 
 export default function ExpensesPage() {
   return (
     <AppLayout currentPath="/expenses" role="owner">
-      <PlaceholderContent
-        title="Expenses"
-        description="Track operating costs and financial outflows."
-      />
+      <ExpensesContent />
     </AppLayout>
   );
 }

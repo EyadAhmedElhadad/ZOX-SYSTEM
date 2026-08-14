@@ -1,5 +1,4 @@
 import React from 'react';
-import AppLogo from '@/components/ui/AppLogo';
 import { Monitor, Users, Gamepad2, TrendingUp } from 'lucide-react';
 
 const liveStats = [
@@ -19,38 +18,43 @@ const liveStats = [
   },
   {
     id: 'bp-stat-3',
-    label: 'Controllers',
+    label: 'Hardware Active',
     value: '40',
     icon: <Gamepad2 size={14} />,
     color: 'text-primary',
   },
   {
     id: 'bp-stat-4',
-    label: "Today's EGP",
+    label: 'Revenue Today',
     value: '2,840',
     icon: <TrendingUp size={14} />,
-    color: 'text-info',
+    color: 'text-accent',
   },
 ];
+
+const avatarColors = ['#7c3aed', '#4edea3', '#e9c400', '#8ab4ff'];
+const avatarInitials = ['AH', 'OS', 'KA', 'RK'];
 
 export default function BrandPanel() {
   return (
     <div className="hidden lg:flex lg:w-[45%] xl:w-[50%] bg-card border-r border-border flex-col justify-between p-10 relative overflow-hidden">
-      {/* Background decoration */}
+      {/* Ambient glowing orbs */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
+        <div className="absolute -top-24 -left-24 w-[28rem] h-[28rem] bg-primary/20 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-32 -right-16 w-[24rem] h-[24rem] bg-accent/15 rounded-full blur-[120px]" />
       </div>
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-12">
-          <AppLogo size={40} />
+          <div className="w-11 h-11 bg-primary rounded-lg flex items-center justify-center glow-primary">
+            <Gamepad2 size={22} className="text-white" />
+          </div>
           <div>
             <span className="text-xl font-bold text-foreground tracking-tight">Zoox</span>
-            <p className="text-xs text-muted-foreground">PlayStation Management</p>
+            <p className="text-xs text-muted-foreground">PlayStation Center</p>
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-foreground leading-tight mb-4">
+        <h2 className="text-3xl xl:text-4xl font-bold text-foreground leading-tight mb-4">
           Run your gaming center
           <br />
           <span className="text-primary">at full speed.</span>
@@ -60,25 +64,32 @@ export default function BrandPanel() {
           operational dashboard built for speed.
         </p>
       </div>
-      <div className="relative z-10 space-y-4">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-          Live Center Status
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          {liveStats?.map((stat) => (
-            <div key={stat?.id} className="bg-background/60 border border-border rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={stat?.color}>{stat?.icon}</span>
-                <span className="text-xs text-muted-foreground">{stat?.label}</span>
+      <div className="relative z-10 space-y-6">
+        <div className="grid grid-cols-2 gap-4">
+          {liveStats.map((stat) => (
+            <div key={stat.id} className="bg-background/60 border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className={stat.color}>{stat.icon}</span>
+                <span className="text-xs text-muted-foreground">{stat.label}</span>
               </div>
-              <p className={`text-xl font-bold font-tabular ${stat?.color}`}>{stat?.value}</p>
+              <p className={`text-2xl font-bold font-tabular ${stat.color}`}>{stat.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-          <p className="text-xs text-muted-foreground">Live data — updates every 30 seconds</p>
+        <div className="flex items-center gap-3">
+          <div className="flex -space-x-2">
+            {avatarInitials.map((ini, i) => (
+              <div
+                key={i}
+                className="w-8 h-8 rounded-full border-2 border-card flex items-center justify-center text-[10px] font-bold text-background"
+                style={{ backgroundColor: avatarColors[i] }}
+              >
+                {ini}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">Trusted by top lounges globally.</p>
         </div>
       </div>
     </div>

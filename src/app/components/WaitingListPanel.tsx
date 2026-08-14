@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Users, Gamepad2 } from 'lucide-react';
+import { Clock, Users, Gamepad2, Bell, UserCheck } from 'lucide-react';
 
 const waiting = [
   {
@@ -36,7 +36,7 @@ const waiting = [
 
 export default function WaitingListPanel() {
   return (
-    <div className="card-base p-4">
+    <div className="glass-panel rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-foreground">Waiting List</h2>
         <span className="text-xs bg-warning/10 text-warning font-bold px-2 py-0.5 rounded-full">
@@ -47,10 +47,10 @@ export default function WaitingListPanel() {
         {waiting?.map((w, idx) => (
           <div
             key={w?.id}
-            className="flex items-start gap-2.5 p-2.5 rounded-lg border border-border bg-muted/20 hover:border-border/60 transition-colors"
+            className="flex items-start gap-2.5 p-2.5 rounded-lg border border-border bg-muted/20 hover:border-border/60 transition-colors group"
           >
-            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-xs font-bold text-muted-foreground">{idx + 1}</span>
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0a1626] border border-primary/30 flex items-center justify-center">
+              <span className="text-xs font-bold font-data-mono text-primary">{idx + 1}</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
@@ -71,10 +71,24 @@ export default function WaitingListPanel() {
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">{w?.preferredType}</p>
             </div>
-            <div className="flex-shrink-0 text-right">
+            <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
               <div className="flex items-center gap-0.5 text-warning">
                 <Clock size={10} />
                 <span className="text-xs font-bold font-tabular">{w?.waitingMin}m</span>
+              </div>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  title="Notify customer"
+                  className="p-1 rounded-md bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                >
+                  <Bell size={11} />
+                </button>
+                <button
+                  title="Check in customer"
+                  className="p-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                >
+                  <UserCheck size={11} />
+                </button>
               </div>
             </div>
           </div>

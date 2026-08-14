@@ -1,60 +1,42 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { Monitor, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { SlidersHorizontal, Zap } from 'lucide-react';
 
 interface LiveSessionsHeaderProps {
   sessionCount: number;
+  onQuickStart: () => void;
 }
 
-export default function LiveSessionsHeader({ sessionCount }: LiveSessionsHeaderProps) {
-  const [lastUpdated, setLastUpdated] = useState('');
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setLastUpdated(
-        now.toLocaleTimeString('en-EG', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        })
-      );
-    };
-    update();
-    const interval = setInterval(update, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
+export default function LiveSessionsHeader({
+  sessionCount,
+  onQuickStart,
+}: LiveSessionsHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-2xl font-bold text-foreground">Live Sessions</h1>
-          <span className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 text-accent text-xs font-bold px-2.5 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Live Sessions</h1>
+          <span className="status-badge bg-accent/10 border border-accent/20 text-accent">
+            <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse pulse-dot" />
             {sessionCount} Active
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            Real-time session monitoring — end sessions, add products, take payment
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Monitoring active gaming stations and current revenue.
+        </p>
       </div>
       <div className="flex items-center gap-3">
-        {lastUpdated && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <RefreshCw size={11} />
-            <span>Updated {lastUpdated}</span>
-          </div>
-        )}
-        <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
-          <Monitor size={14} className="text-muted-foreground" />
-          <span className="text-xs font-semibold text-foreground">
-            {sessionCount} / 10 rooms occupied
-          </span>
-        </div>
+        <button className="glass-panel glow-hover flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground">
+          <SlidersHorizontal size={15} />
+          Filter
+        </button>
+        <button
+          onClick={onQuickStart}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold glow-primary active:scale-95 transition-all duration-150"
+        >
+          <Zap size={15} />
+          Quick Start
+        </button>
       </div>
     </div>
   );

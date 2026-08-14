@@ -33,16 +33,10 @@ export default function ReservationFilters({
   onStatusChange,
   dateFilter,
   onDateChange,
-  reservations,
   isCustomer = false,
 }: ReservationFiltersProps) {
-  const countByStatus = (s: ReservationStatus | 'all') => {
-    if (s === 'all') return reservations.length;
-    return reservations.filter((r) => r.status === s).length;
-  };
-
   return (
-    <div className="space-y-3 mb-5">
+    <div className="glass-panel rounded-xl p-4">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search
@@ -54,7 +48,7 @@ export default function ReservationFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search customer, phone, room, or game..."
-            className="input-field pl-9"
+            className="w-full bg-[#051424] border border-[#273647] rounded-lg pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-150"
           />
         </div>
         {!isCustomer && (
@@ -66,28 +60,20 @@ export default function ReservationFilters({
           />
         )}
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {statuses.map((s) => {
-          const count = countByStatus(s);
-          return (
-            <button
-              key={`filter-status-${s}`}
-              onClick={() => onStatusChange(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 ${
-                statusFilter === s
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {s === 'all' ? 'All' : s}
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-full ${statusFilter === s ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-background text-muted-foreground'}`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap gap-2 mt-4">
+        {statuses.map((s) => (
+          <button
+            key={`filter-status-${s}`}
+            onClick={() => onStatusChange(s)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 border ${
+              statusFilter === s
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-[#273647] bg-[#0d1c2d] text-muted-foreground hover:text-foreground hover:border-border/60'
+            }`}
+          >
+            {s === 'all' ? 'All' : s}
+          </button>
+        ))}
       </div>
     </div>
   );

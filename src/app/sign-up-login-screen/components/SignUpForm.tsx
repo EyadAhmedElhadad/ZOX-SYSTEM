@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, User, Mail, Phone, Lock, KeyRound } from 'lucide-react';
 
 interface SignUpFormData {
   name: string;
@@ -12,11 +12,7 @@ interface SignUpFormData {
   terms: boolean;
 }
 
-interface SignUpFormProps {
-  onSwitchToLogin: () => void;
-}
-
-export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
+export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,27 +31,31 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
     // Backend integration point: POST /api/auth/register with customer profile data
     await new Promise((r) => setTimeout(r, 1200));
     setIsLoading(false);
-    onSwitchToLogin();
   };
 
-  return (
-    <div className="fade-in">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Create account</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Join Zoox as a customer to book sessions and track loyalty
-        </p>
-      </div>
+  const inputBase =
+    'w-full bg-[#051424] border border-[#273647] rounded-lg py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-150';
 
+  const field = (error?: string) =>
+    error ? 'border-danger focus:border-danger focus:ring-danger/50' : '';
+
+  return (
+    <div className="fade-in space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="block text-sm font-semibold text-foreground mb-1.5">Full Name</label>
-          <input
-            type="text"
-            className={`input-field ${errors.name ? 'border-danger' : ''}`}
-            placeholder="Ahmed Mohamed"
-            {...register('name', { required: 'Full name is required' })}
-          />
+          <div className="relative">
+            <User
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              className={`${inputBase} pl-10 ${field(errors.name?.message)}`}
+              placeholder="Ahmed Mohamed"
+              {...register('name', { required: 'Full name is required' })}
+            />
+          </div>
           {errors.name && <p className="text-xs text-danger mt-1">{errors.name.message}</p>}
         </div>
 
@@ -63,15 +63,21 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           <label className="block text-sm font-semibold text-foreground mb-1.5">
             Email address
           </label>
-          <input
-            type="email"
-            className={`input-field ${errors.email ? 'border-danger' : ''}`}
-            placeholder="you@gmail.com"
-            {...register('email', {
-              required: 'Email is required',
-              pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
-            })}
-          />
+          <div className="relative">
+            <Mail
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="email"
+              className={`${inputBase} pl-10 ${field(errors.email?.message)}`}
+              placeholder="you@gmail.com"
+              {...register('email', {
+                required: 'Email is required',
+                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
+              })}
+            />
+          </div>
           {errors.email && <p className="text-xs text-danger mt-1">{errors.email.message}</p>}
         </div>
 
@@ -80,24 +86,37 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           <p className="text-xs text-muted-foreground mb-1.5">
             Egyptian mobile number — used for reservations and notifications
           </p>
-          <input
-            type="tel"
-            className={`input-field ${errors.phone ? 'border-danger' : ''}`}
-            placeholder="01xxxxxxxxx"
-            {...register('phone', {
-              required: 'Phone number is required',
-              pattern: { value: /^01[0-9]{9}$/, message: 'Enter a valid Egyptian mobile number' },
-            })}
-          />
+          <div className="relative">
+            <Phone
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="tel"
+              className={`${inputBase} pl-10 ${field(errors.phone?.message)}`}
+              placeholder="01xxxxxxxxx"
+              {...register('phone', {
+                required: 'Phone number is required',
+                pattern: {
+                  value: /^01[0-9]{9}$/,
+                  message: 'Enter a valid Egyptian mobile number',
+                },
+              })}
+            />
+          </div>
           {errors.phone && <p className="text-xs text-danger mt-1">{errors.phone.message}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-foreground mb-1.5">Password</label>
           <div className="relative">
+            <Lock
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               type={showPassword ? 'text' : 'password'}
-              className={`input-field pr-10 ${errors.password ? 'border-danger' : ''}`}
+              className={`${inputBase} pl-10 pr-10 ${field(errors.password?.message)}`}
               placeholder="Min. 8 characters"
               {...register('password', {
                 required: 'Password is required',
@@ -120,9 +139,13 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
             Confirm Password
           </label>
           <div className="relative">
+            <KeyRound
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               type={showConfirm ? 'text' : 'password'}
-              className={`input-field pr-10 ${errors.confirmPassword ? 'border-danger' : ''}`}
+              className={`${inputBase} pl-10 pr-10 ${field(errors.confirmPassword?.message)}`}
               placeholder="Re-enter password"
               {...register('confirmPassword', {
                 required: 'Please confirm your password',
@@ -146,7 +169,7 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
-              className="w-4 h-4 mt-0.5 rounded border-border bg-input accent-primary flex-shrink-0"
+              className="w-4 h-4 mt-0.5 rounded border-[#273647] bg-input accent-primary flex-shrink-0"
               {...register('terms', { required: 'You must accept the terms to continue' })}
             />
             <span className="text-sm text-muted-foreground">
@@ -166,10 +189,10 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="btn-primary w-full h-11 flex items-center justify-center gap-2"
+          className="w-full bg-primary text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-150 hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed glow-primary"
         >
           {isLoading ? (
-            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>
               <UserPlus size={16} />
@@ -179,11 +202,10 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         </button>
       </form>
 
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Already have an account?{' '}
-        <button onClick={onSwitchToLogin} className="text-primary font-semibold hover:underline">
-          Sign in
-        </button>
+      <p className="text-center text-xs text-muted-foreground">
+        By creating an account, you agree to our{' '}
+        <span className="text-primary font-semibold cursor-pointer">Terms</span> and{' '}
+        <span className="text-primary font-semibold cursor-pointer">Privacy Policy</span>.
       </p>
     </div>
   );

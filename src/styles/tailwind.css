@@ -3,58 +3,59 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a12;
-  --foreground: #f1f0f7;
+  --background: #051424;
+  --foreground: #d4e4fa;
   --primary: #7c3aed;
-  --primary-foreground: #ffffff;
-  --secondary: #1e1b2e;
-  --secondary-foreground: #c4b5fd;
-  --accent: #10b981;
-  --accent-foreground: #ffffff;
-  --muted: #1a1828;
-  --muted-foreground: #8b85a0;
-  --card: #13111f;
-  --card-foreground: #f1f0f7;
-  --border: #2a2640;
-  --input: #1e1b2e;
+  --primary-foreground: #ede0ff;
+  --secondary: #1c2b3c;
+  --secondary-foreground: #ccc3d8;
+  --accent: #4edea3;
+  --accent-foreground: #00331f;
+  --muted: #122131;
+  --muted-foreground: #ccc3d8;
+  --card: #0d1c2d;
+  --card-foreground: #d4e4fa;
+  --border: #273647;
+  --input: #0d1c2d;
   --ring: #7c3aed;
   --radius: 0.75rem;
   --font-sans: var(--font-plus-jakarta-sans), sans-serif;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --success: #10b981;
-  --info: #3b82f6;
-  --vip: #ffd700;
-  --session-active: #10b981;
-  --session-waiting: #f59e0b;
-  --session-paused: #6366f1;
-  --room-available: #10b981;
-  --room-occupied: #ef4444;
-  --room-reserved: #f59e0b;
-  --room-maintenance: #6b7280;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+  --warning: #e9c400;
+  --danger: #ff8a80;
+  --success: #4edea3;
+  --info: #8ab4ff;
+  --vip: #e9c400;
+  --session-active: #4edea3;
+  --session-waiting: #e9c400;
+  --session-paused: #c7b3ff;
+  --room-available: #4edea3;
+  --room-occupied: #ff8a80;
+  --room-reserved: #e9c400;
+  --room-maintenance: #958da1;
 }
 
 .light {
-  --background: #f4f3fa;
-  --foreground: #1c1a2e;
+  --background: #f6f3ff;
+  --foreground: #1c1b2e;
   --primary: #7c3aed;
   --primary-foreground: #ffffff;
-  --secondary: #e9e6f6;
-  --secondary-foreground: #6d5bd0;
+  --secondary: #e6e0f5;
+  --secondary-foreground: #4a4455;
   --accent: #0d9e6e;
   --accent-foreground: #ffffff;
-  --muted: #e6e3f2;
-  --muted-foreground: #6f6a8a;
+  --muted: #e9e2f6;
+  --muted-foreground: #5f5a72;
   --card: #ffffff;
-  --card-foreground: #1c1a2e;
-  --border: #d9d5ec;
+  --card-foreground: #1c1b2e;
+  --border: #d6ceeb;
   --input: #ffffff;
   --ring: #7c3aed;
-  --warning: #d97706;
+  --warning: #b58a00;
   --danger: #dc2626;
   --success: #0d9e6e;
   --info: #3b82f6;
-  --vip: #ffd700;
+  --vip: #b58a00;
 }
 
 @layer base {
@@ -84,10 +85,9 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .text-hero {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    font-weight: 700;
-    line-height: 1.1;
+  .font-data-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
   }
 
   .scrollbar-thin {
@@ -107,6 +107,45 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: var(--border);
     border-radius: 2px;
+  }
+
+  .glass-panel {
+    background: rgba(13, 28, 45, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #273647;
+  }
+
+  .glow-hover {
+    transition: all 0.2s ease;
+  }
+
+  .glow-hover:hover {
+    border-color: #7c3aed;
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+  }
+
+  .vip-border {
+    border-color: #c9a900;
+    box-shadow: 0 0 15px rgba(201, 169, 0, 0.2);
+  }
+
+  .vip-border:hover {
+    border-color: #e9c400;
+    box-shadow: 0 0 20px rgba(233, 196, 0, 0.4);
+  }
+
+  .neon-glow:hover {
+    border-color: #7c3aed;
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+  }
+
+  .pulse-emerald {
+    animation: pulseEmerald 2s infinite;
+  }
+
+  .pulse-dot {
+    box-shadow: 0 0 8px rgba(78, 222, 163, 0.8);
   }
 
   .glow-primary {
@@ -215,7 +254,8 @@
     @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground text-sm font-medium transition-all duration-150 hover:text-foreground cursor-pointer;
   }
 .nav-item-active  {
-    @apply text-primary border;
+    @apply text-accent border;
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
   .section-label {
@@ -241,4 +281,10 @@
 @keyframes timerPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+@keyframes pulseEmerald {
+  0% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(78, 222, 163, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0); }
 }

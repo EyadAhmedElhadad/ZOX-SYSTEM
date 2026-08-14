@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/contexts/AuthContext';
 import PwaEnhancements from '@/components/ui/PwaEnhancements';
 import '../styles/tailwind.css';
@@ -9,6 +9,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-plus-jakarta-sans',
+  display: 'swap',
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-jetbrains-mono',
   display: 'swap',
 });
 
@@ -46,7 +53,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
-      <body className={plusJakartaSans.className} suppressHydrationWarning>
+      <body
+        className={`${plusJakartaSans.className} ${jetBrainsMono.variable}`}
+        suppressHydrationWarning
+      >
         <AuthProvider>{children}</AuthProvider>
         <PwaEnhancements />
 

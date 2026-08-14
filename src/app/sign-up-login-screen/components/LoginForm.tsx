@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, Copy, Check, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { demoAccounts, roleLabels, homePathForRole } from '@/lib/demoAccounts';
 
@@ -19,11 +19,7 @@ interface DemoAccount {
   color: string;
 }
 
-interface LoginFormProps {
-  onSwitchToSignUp: () => void;
-}
-
-export default function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
+export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -73,17 +69,40 @@ export default function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const inputBase =
+    'w-full bg-[#051424] border border-[#273647] rounded-lg py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-150';
+
   return (
-    <div className="fade-in">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-6 lg:hidden">
-          <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-            <span className="text-sm font-bold text-primary">Z</span>
+    <div className="fade-in space-y-6">
+      <div className="flex flex-wrap gap-2">
+        {demoAccounts.map((account) => (
+          <div
+            key={`demo-${account.role}`}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 pl-3 pr-2 py-1.5 cursor-pointer hover:border-primary/40 hover:glow-hover transition-colors"
+            onClick={() => fillCredentials(account)}
+            title={`Use ${roleLabels[account.role]} demo account`}
+          >
+            <span className={`text-[11px] font-bold ${account.color}`}>
+              {roleLabels[account.role]}
+            </span>
+            <span className="text-[11px] text-muted-foreground">{account.email}</span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(account.email, `email-${account.role}`);
+              }}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Copy email"
+            >
+              {copiedField === `email-${account.role}` ? (
+                <Check size={11} className="text-accent" />
+              ) : (
+                <Copy size={11} />
+              )}
+            </button>
           </div>
-          <span className="font-bold text-lg text-foreground">Zoox</span>
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-        <p className="text-sm text-muted-foreground mt-1">Sign in to your Zoox dashboard</p>
+        ))}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -91,24 +110,39 @@ export default function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
           <label className="block text-sm font-semibold text-foreground mb-1.5">
             Email address
           </label>
-          <input
-            type="email"
-            className={`input-field ${errors.email ? 'border-danger focus:ring-danger/50' : ''}`}
-            placeholder="you@zoox-ps.com"
-            {...register('email', {
-              required: 'Email is required',
-              pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
-            })}
-          />
+          <div className="relative">
+            <Mail
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="email"
+              className={`${inputBase} pl-10 ${errors.email ? 'border-danger focus:border-danger focus:ring-danger/50' : ''}`}
+              placeholder="you@zoox-ps.com"
+              {...register('email', {
+                required: 'Email is required',
+                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
+              })}
+            />
+          </div>
           {errors.email && <p className="text-xs text-danger mt-1.5">{errors.email.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-1.5">Password</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-semibold text-foreground">Password</label>
+            <button type="button" className="text-xs text-primary font-semibold hover:underline">
+              Forgot?
+            </button>
+          </div>
           <div className="relative">
+            <Lock
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               type={showPassword ? 'text' : 'password'}
-              className={`input-field pr-10 ${errors.password ? 'border-danger focus:ring-danger/50' : ''}`}
+              className={`${inputBase} pl-10 pr-10 ${errors.password ? 'border-danger focus:border-danger focus:ring-danger/50' : ''}`}
               placeholder="••••••••••"
               {...register('password', {
                 required: 'Password is required',
@@ -132,82 +166,34 @@ export default function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded border-border bg-input accent-primary"
+              className="w-4 h-4 rounded border-[#273647] bg-input accent-primary"
               {...register('remember')}
             />
             <span className="text-sm text-muted-foreground">Remember me</span>
           </label>
-          <button type="button" className="text-sm text-primary font-semibold hover:underline">
-            Forgot password?
-          </button>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="btn-primary w-full h-11 flex items-center justify-center gap-2"
+          className="w-full bg-primary text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-150 hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed glow-primary"
         >
           {isLoading ? (
-            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>
-              <LogIn size={16} />
-              Sign In
+              Authenticate
+              <ArrowRight size={16} />
             </>
           )}
         </button>
       </form>
 
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        New to Zoox?{' '}
-        <button onClick={onSwitchToSignUp} className="text-primary font-semibold hover:underline">
-          Create an account
-        </button>
+      <p className="text-center text-xs text-muted-foreground">
+        By logging in, you agree to our{' '}
+        <span className="text-primary font-semibold cursor-pointer">Terms</span> and{' '}
+        <span className="text-primary font-semibold cursor-pointer">Privacy Policy</span>.
       </p>
-
-      {/* Demo credentials */}
-      <div className="mt-8 p-4 bg-muted/50 border border-border rounded-xl">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-          Demo Accounts
-        </p>
-        <div className="space-y-2">
-          {demoAccounts.map((account) => (
-            <div
-              key={`demo-${account.role}`}
-              className="flex items-center justify-between gap-2 p-2 rounded-lg bg-background/60 border border-border/50 hover:border-primary/30 transition-colors cursor-pointer group"
-              onClick={() => fillCredentials(account)}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`text-xs font-bold w-16 flex-shrink-0 ${account.color}`}>
-                  {roleLabels[account.role]}
-                </span>
-                <span className="text-xs text-muted-foreground truncate">{account.email}</span>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyToClipboard(account.email, `email-${account.role}`);
-                  }}
-                  className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                  title="Copy email"
-                >
-                  {copiedField === `email-${account.role}` ? (
-                    <Check size={11} className="text-accent" />
-                  ) : (
-                    <Copy size={11} />
-                  )}
-                </button>
-                <span className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                  Use →
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">Click any row to autofill credentials</p>
-      </div>
     </div>
   );
 }

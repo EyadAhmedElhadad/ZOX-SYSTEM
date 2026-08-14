@@ -142,8 +142,8 @@ export default function ActiveSessionsList() {
   }, []);
 
   return (
-    <div className="card-base p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass-panel rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
         <div>
           <h2 className="text-base font-semibold text-foreground">Active Sessions</h2>
           <p className="text-xs text-muted-foreground">{sessions.length} sessions running now</p>
@@ -158,8 +158,8 @@ export default function ActiveSessionsList() {
 
       <div className="overflow-x-auto scrollbar-thin">
         <table className="w-full min-w-[700px]">
-          <thead>
-            <tr className="border-b border-border">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-border bg-[#0a1626]/95 backdrop-blur">
               {[
                 'Room',
                 'Customer',
@@ -172,7 +172,7 @@ export default function ActiveSessionsList() {
               ].map((h) => (
                 <th
                   key={`th-${h}`}
-                  className="text-left text-xs font-semibold text-muted-foreground pb-2.5 pr-4 last:pr-0"
+                  className="text-left text-xs font-semibold text-muted-foreground px-4 py-2.5 last:pr-4"
                 >
                   {h}
                 </th>
@@ -198,7 +198,7 @@ export default function ActiveSessionsList() {
                   key={session.id}
                   className="border-b border-border/50 hover:bg-muted/30 transition-colors group"
                 >
-                  <td className="py-3 pr-4">
+                  <td className="py-3 px-4">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{session.room}</p>
                       <span
@@ -208,11 +208,11 @@ export default function ActiveSessionsList() {
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 px-4">
                     <p className="text-sm font-medium text-foreground">{session.customer}</p>
                     <p className="text-xs text-muted-foreground">{session.phone}</p>
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 px-4">
                     <p className="text-sm text-foreground">{session.game}</p>
                     <p className="text-xs text-muted-foreground">
                       {session.sessionType === 'fixed'
@@ -220,37 +220,37 @@ export default function ActiveSessionsList() {
                         : 'Open-ended'}
                     </p>
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 px-4">
                     <div
-                      className={`flex items-center gap-1 ${isNearEnd ? 'text-warning' : 'text-accent'}`}
+                      className={`flex items-center gap-1.5 ${isNearEnd ? 'text-warning' : 'text-accent'}`}
                     >
                       <Clock
                         size={12}
                         className={isNearEnd ? 'text-warning' : 'session-timer-pulse'}
                       />
-                      <span className="font-tabular text-sm font-semibold">
+                      <span className="font-data-mono text-sm font-semibold">
                         {formatElapsed(elapsedMin)}
                       </span>
                     </div>
                     {isNearEnd && <p className="text-xs text-warning">Ending soon</p>}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 px-4">
                     <span className="text-sm text-foreground font-tabular">{session.players}</span>
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 px-4">
                     <span
                       className={`text-sm font-tabular ${session.products > 0 ? 'text-foreground' : 'text-muted-foreground'}`}
                     >
                       {session.products}
                     </span>
                   </td>
-                  <td className="py-3 pr-4">
-                    <span className="text-sm font-bold font-tabular text-foreground">
+                  <td className="py-3 px-4">
+                    <span className="text-sm font-bold font-data-mono text-foreground">
                       {total.toLocaleString()}
                     </span>
                     <span className="text-xs text-muted-foreground ml-1">EGP</span>
                   </td>
-                  <td className="py-3">
+                  <td className="py-3 pr-4">
                     <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         title="Add product"

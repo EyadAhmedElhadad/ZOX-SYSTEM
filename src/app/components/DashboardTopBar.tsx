@@ -35,10 +35,12 @@ export default function DashboardTopBar() {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Staff Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{currentDate}</p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+          Staff Dashboard
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">{currentDate}</p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative">
           <Search
             size={15}
@@ -47,18 +49,20 @@ export default function DashboardTopBar() {
           <input
             type="text"
             placeholder="Quick search customer..."
-            className="input-field pl-9 w-56 text-sm h-9"
+            className="glass-panel pl-9 w-56 text-sm h-10 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
           />
         </div>
-        <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 glass-panel rounded-xl px-3 py-2">
           <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-          <span className="font-tabular text-sm font-semibold text-foreground">{currentTime}</span>
+          <span className="font-data-mono text-sm font-semibold text-foreground">
+            {currentTime}
+          </span>
         </div>
-        <button className="relative p-2 bg-card border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+        <button className="relative p-2.5 glass-panel rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
           <Bell size={18} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full ring-2 ring-[#0d1c2d]" />
         </button>
-        <button className="p-2 bg-card border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+        <button className="p-2.5 glass-panel rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
           <RefreshCw size={18} />
         </button>
         <ThemeToggle />

@@ -228,6 +228,15 @@ function SidebarContent({
         </div>
       </div>
 
+      {/* CTA */}
+      {!collapsed && (
+        <div className="px-4 py-3">
+          <button className="w-full bg-primary text-primary-foreground font-semibold text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-primary">
+            <span className="text-lg leading-none">+</span> New Session
+          </button>
+        </div>
+      )}
+
       {/* Role badge */}
       {!collapsed && (
         <div className="px-4 py-3 border-b border-border">
@@ -265,12 +274,12 @@ function SidebarContent({
                 <span className="flex-shrink-0">{item.icon}</span>
                 {!collapsed && <span className="truncate">{item.label}</span>}
                 {!collapsed && item.badge && item.badge > 0 ? (
-                  <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  <span className="ml-auto bg-accent text-accent-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
                     {item.badge}
                   </span>
                 ) : null}
                 {collapsed && item.badge && item.badge > 0 ? (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
                 ) : null}
               </Link>
             ))}

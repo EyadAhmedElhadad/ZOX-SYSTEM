@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarClock, Users, Clock } from 'lucide-react';
+import { CalendarClock, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const upcoming = [
@@ -52,7 +52,7 @@ const upcoming = [
 
 export default function UpcomingReservationsPanel() {
   return (
-    <div className="card-base p-4">
+    <div className="glass-panel rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-foreground">Upcoming Reservations</h2>
         <Link href="/reservations">
@@ -71,11 +71,20 @@ export default function UpcomingReservationsPanel() {
                 : 'border-border bg-muted/30 hover:border-border/60'
             }`}
           >
-            <div className="flex-shrink-0 mt-0.5">
+            <div
+              className={`flex-shrink-0 w-11 rounded-lg border flex flex-col items-center justify-center py-1.5 gap-0.5 ${
+                r?.minutesUntil <= 15
+                  ? 'border-warning/30 bg-warning/10'
+                  : 'border-border/60 bg-[#0a1626]'
+              }`}
+            >
               <CalendarClock
-                size={14}
+                size={12}
                 className={r?.minutesUntil <= 15 ? 'text-warning' : 'text-muted-foreground'}
               />
+              <span className="text-[11px] font-bold font-data-mono text-foreground leading-none">
+                {r?.time}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{r?.customer}</p>
@@ -83,9 +92,6 @@ export default function UpcomingReservationsPanel() {
                 {r?.room} · {r?.game}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                  <Clock size={9} /> {r?.time}
-                </span>
                 <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
                   <Users size={9} /> {r?.players}
                 </span>
@@ -97,6 +103,7 @@ export default function UpcomingReservationsPanel() {
               >
                 {r?.minutesUntil}m
               </span>
+              <p className="text-[10px] text-muted-foreground mt-0.5">until</p>
             </div>
           </div>
         ))}

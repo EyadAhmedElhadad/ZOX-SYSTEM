@@ -1,14 +1,11 @@
 import React from 'react';
 import AppLayout from '@/components/AppLayout';
-import PlaceholderContent from '@/components/ui/PlaceholderContent';
+import SettingsContent from './components/SettingsContent';
 
 export default function SettingsPage() {
   return (
     <AppLayout currentPath="/settings" role="owner">
-      <PlaceholderContent
-        title="Settings"
-        description="Configure your center, rates, and preferences."
-      />
+      <SettingsContent />
     </AppLayout>
   );
 }
