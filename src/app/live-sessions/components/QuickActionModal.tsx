@@ -85,9 +85,6 @@ export default function QuickActionModal({
         return;
       }
       if (result.ok && result.target) {
-        toast.success(
-          `${result.productAdded?.name} x${result.productAdded?.qty} added + ${result.timeExtended}min time`
-        );
         onApply(result.target, result);
       } else {
         toast.error(result.error ?? 'Quick action failed');

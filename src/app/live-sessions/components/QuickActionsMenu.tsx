@@ -43,44 +43,60 @@ export default function QuickActionsMenu({ zones, onClose, onSelect }: QuickActi
 
         {/* Zones */}
         <div className="p-4 space-y-2 overflow-y-auto scrollbar-thin flex-1">
-          {zones.map((zone) => (
-            <button
-              key={zone.id}
-              onClick={() => onSelect(zone)}
-              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-border bg-muted/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-150 active:scale-[0.98] text-left"
-            >
-              <div className="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center text-xl flex-shrink-0">
-                {zone.emoji}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-foreground truncate">{zone.zoneName}</p>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded-full">
-                    {zoneTypeLabels[zone.zoneType]}
-                  </span>
+          {zones.length === 0 ? (
+            <div className="h-full min-h-[220px] flex items-center justify-center text-center">
+              <div className="max-w-xs">
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center mb-3">
+                  <Users size={18} className="text-muted-foreground" />
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1 truncate">
-                    <Users size={11} />
-                    {zone.customer}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <ShoppingBag size={11} />
-                    {zone.products.reduce((s, p) => s + p.qty, 0)} items
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={11} />
-                    {zone.hourlyRate > 0
-                      ? zone.sessionType === 'fixed'
-                        ? `${zone.fixedDurationMinutes ?? 0}min`
-                        : `+${zone.extendedMinutes ?? 0}min credit`
-                      : '—'}
-                  </span>
-                </div>
+                <p className="text-sm font-semibold text-foreground">
+                  No active sessions right now
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Start a session first, then come back here to add product and extend time.
+                </p>
               </div>
-              <span className="text-xs font-bold text-primary flex-shrink-0">Select →</span>
-            </button>
-          ))}
+            </div>
+          ) : (
+            zones.map((zone) => (
+              <button
+                key={zone.id}
+                onClick={() => onSelect(zone)}
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-border bg-muted/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-150 active:scale-[0.98] text-left"
+              >
+                <div className="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center text-xl flex-shrink-0">
+                  {zone.emoji}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-foreground truncate">{zone.zoneName}</p>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded-full">
+                      {zoneTypeLabels[zone.zoneType]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 truncate">
+                      <Users size={11} />
+                      {zone.customer}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ShoppingBag size={11} />
+                      {zone.products.reduce((s, p) => s + p.qty, 0)} items
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} />
+                      {zone.hourlyRate > 0
+                        ? zone.sessionType === 'fixed'
+                          ? `${zone.fixedDurationMinutes ?? 0}min`
+                          : `+${zone.extendedMinutes ?? 0}min credit`
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-primary flex-shrink-0">Select →</span>
+              </button>
+            ))
+          )}
         </div>
       </div>
     </div>

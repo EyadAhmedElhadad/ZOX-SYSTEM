@@ -6,7 +6,7 @@ import Link from 'next/link';
 type RoomStatus = 'available' | 'occupied' | 'reserved' | 'maintenance';
 type RoomType = 'Standard' | 'Premium' | 'VIP';
 
-interface Room {
+export interface Room {
   id: string;
   name: string;
   type: RoomType;
@@ -22,110 +22,9 @@ interface Room {
   note?: string;
 }
 
-const rooms: Room[] = [
-  {
-    id: 'room-001',
-    name: 'Room 1',
-    type: 'Standard',
-    capacity: 2,
-    status: 'occupied',
-    currentCustomer: 'Mohamed K.',
-    game: 'FC 26',
-    sessionStart: '14:30',
-    elapsedMinutes: 47,
-    controllers: 2,
-    quality: 3,
-    psModel: 'PS5',
-  },
-  {
-    id: 'room-002',
-    name: 'Room 2',
-    type: 'Standard',
-    capacity: 4,
-    status: 'occupied',
-    currentCustomer: 'Ahmed & Group',
-    game: 'GTA V',
-    sessionStart: '13:45',
-    elapsedMinutes: 92,
-    controllers: 4,
-    quality: 3,
-    psModel: 'PS5',
-  },
-  {
-    id: 'room-003',
-    name: 'Room 3',
-    type: 'Premium',
-    capacity: 4,
-    status: 'reserved',
-    currentCustomer: 'Omar Sherif',
-    game: 'Call of Duty',
-    sessionStart: '16:00',
-    elapsedMinutes: 0,
-    controllers: 4,
-    quality: 4,
-    psModel: 'PS5',
-  },
-  {
-    id: 'room-004',
-    name: 'Room 4',
-    type: 'VIP',
-    capacity: 6,
-    status: 'occupied',
-    currentCustomer: 'Karim & Friends',
-    game: 'FC 26',
-    sessionStart: '14:00',
-    elapsedMinutes: 77,
-    controllers: 6,
-    quality: 5,
-    psModel: 'PS5 Pro',
-    note: 'VIP — Extra drinks requested',
-  },
-  {
-    id: 'room-005',
-    name: 'Room 5',
-    type: 'Standard',
-    capacity: 2,
-    status: 'available',
-    controllers: 2,
-    quality: 2,
-    psModel: 'PS4',
-  },
-  {
-    id: 'room-006',
-    name: 'Room 6',
-    type: 'Premium',
-    capacity: 4,
-    status: 'occupied',
-    currentCustomer: 'Youssef M.',
-    game: 'PES 2024',
-    sessionStart: '15:10',
-    elapsedMinutes: 27,
-    controllers: 2,
-    quality: 4,
-    psModel: 'PS5',
-  },
-  {
-    id: 'room-007',
-    name: 'Room 7',
-    type: 'Standard',
-    capacity: 2,
-    status: 'maintenance',
-    controllers: 2,
-    quality: 2,
-    psModel: 'PS4',
-    note: 'Controller #07 damaged',
-  },
-  {
-    id: 'room-008',
-    name: 'Room 8',
-    type: 'VIP',
-    capacity: 8,
-    status: 'available',
-    controllers: 8,
-    quality: 5,
-    psModel: 'PS5 Pro',
-  },
-];
+interface RoomStatusGridProps {
+  rooms: Room[];
+}
 
 const statusConfig: Record<
   RoomStatus,
@@ -188,7 +87,7 @@ function QualityStars({ quality }: { quality: number }) {
   );
 }
 
-export default function RoomStatusGrid() {
+export default function RoomStatusGrid({ rooms }: RoomStatusGridProps) {
   const [filter, setFilter] = useState<RoomStatus | 'all'>('all');
 
   const filtered = filter === 'all' ? rooms : rooms.filter((r) => r.status === filter);
@@ -205,7 +104,7 @@ export default function RoomStatusGrid() {
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
           <h2 className="text-base font-semibold text-foreground">Room Status</h2>
-          <p className="text-xs text-muted-foreground">All gaming rooms — live view</p>
+          <p className="text-xs text-muted-foreground">All gaming rooms - live view</p>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {(['all', 'available', 'occupied', 'reserved', 'maintenance'] as const).map((f) => (

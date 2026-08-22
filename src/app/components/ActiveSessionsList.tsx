@@ -1,9 +1,9 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, ShoppingCart, CreditCard, Pause, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
-interface ActiveSession {
+export interface ActiveSession {
   id: string;
   room: string;
   roomType: 'Standard' | 'Premium' | 'VIP';
@@ -20,101 +20,9 @@ interface ActiveSession {
   fixedDurationMinutes?: number;
 }
 
-const sessions: ActiveSession[] = [
-  {
-    id: 'session-001',
-    room: 'Room 1',
-    roomType: 'Standard',
-    customer: 'Mohamed Khalil',
-    phone: '0100-xxx-4521',
-    game: 'FC 26',
-    startTime: '14:30',
-    startMinutesAgo: 47,
-    players: 2,
-    products: 2,
-    billTotal: 145,
-    hourlyRate: 80,
-    sessionType: 'open',
-  },
-  {
-    id: 'session-002',
-    room: 'Room 2',
-    roomType: 'Standard',
-    customer: 'Ahmed & Group',
-    phone: '0112-xxx-8834',
-    game: 'GTA V',
-    startTime: '13:45',
-    startMinutesAgo: 92,
-    players: 4,
-    products: 5,
-    billTotal: 310,
-    hourlyRate: 120,
-    sessionType: 'fixed',
-    fixedDurationMinutes: 120,
-  },
-  {
-    id: 'session-003',
-    room: 'Room 4',
-    roomType: 'VIP',
-    customer: 'Karim Mostafa',
-    phone: '0111-xxx-2267',
-    game: 'FC 26',
-    startTime: '14:00',
-    startMinutesAgo: 77,
-    players: 6,
-    products: 8,
-    billTotal: 520,
-    hourlyRate: 200,
-    sessionType: 'open',
-  },
-  {
-    id: 'session-004',
-    room: 'Room 6',
-    roomType: 'Premium',
-    customer: 'Youssef Mahmoud',
-    phone: '0100-xxx-9901',
-    game: 'PES 2024',
-    startTime: '15:10',
-    startMinutesAgo: 27,
-    players: 2,
-    products: 1,
-    billTotal: 95,
-    hourlyRate: 100,
-    sessionType: 'fixed',
-    fixedDurationMinutes: 60,
-  },
-  {
-    id: 'session-005',
-    room: 'Room 9',
-    roomType: 'Standard',
-    customer: 'Hassan Nour',
-    phone: '0115-xxx-3312',
-    game: 'Call of Duty',
-    startTime: '14:50',
-    startMinutesAgo: 47,
-    players: 2,
-    products: 0,
-    billTotal: 62,
-    hourlyRate: 80,
-    sessionType: 'open',
-  },
-  {
-    id: 'session-006',
-    room: 'Room 10',
-    roomType: 'Premium',
-    customer: 'Sara & Nadia',
-    phone: '0106-xxx-7741',
-    game: 'FC 26',
-    startTime: '15:20',
-    startMinutesAgo: 17,
-    players: 2,
-    products: 3,
-    billTotal: 78,
-    hourlyRate: 100,
-    sessionType: 'fixed',
-    fixedDurationMinutes: 90,
-  },
-];
+interface ActiveSessionsListProps {
+  sessions: ActiveSession[];
+}
 
 function formatElapsed(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -129,10 +37,14 @@ const typeColors: Record<string, string> = {
   VIP: 'text-vip bg-vip/10',
 };
 
-export default function ActiveSessionsList() {
+export default function ActiveSessionsList({ sessions }: ActiveSessionsListProps) {
   const [elapsed, setElapsed] = useState<Record<string, number>>(
     Object.fromEntries(sessions.map((s) => [s.id, s.startMinutesAgo]))
   );
+
+  useEffect(() => {
+    setElapsed(Object.fromEntries(sessions.map((s) => [s.id, s.startMinutesAgo])));
+  }, [sessions]);
 
   useEffect(() => {
     const interval = setInterval(() => {
