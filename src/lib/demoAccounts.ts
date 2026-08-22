@@ -39,6 +39,53 @@ export const demoAccounts: DemoAccount[] = [
   },
 ];
 
+const REGISTERED_KEY = 'zoox-registered-accounts';
+
+export function loadRegisteredAccounts(): DemoAccount[] {
+  try {
+    const raw = localStorage.getItem(REGISTERED_KEY);
+    if (raw) return JSON.parse(raw) as DemoAccount[];
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
+export function saveRegisteredAccounts(accounts: DemoAccount[]): void {
+  try {
+    localStorage.setItem(REGISTERED_KEY, JSON.stringify(accounts));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function findAccount(email: string): DemoAccount | undefined {
+  return (
+    demoAccounts.find((a) => a.email === email) ??
+    loadRegisteredAccounts().find((a) => a.email === email)
+  );
+}
+
+export function registerAccount(data: {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+}): DemoAccount | null {
+  const exists = findAccount(data.email);
+  if (exists) return null;
+  const account: DemoAccount = {
+    name: data.name,
+    email: data.email,
+    password: data.password,
+    role: 'customer',
+    color: 'text-primary',
+  };
+  const next = [account, ...loadRegisteredAccounts()];
+  saveRegisteredAccounts(next);
+  return account;
+}
+
 export const roleLabels: Record<UserRole, string> = {
   owner: 'Owner',
   manager: 'Manager',
@@ -55,6 +102,33 @@ export const roleBadgeColors: Record<UserRole, string> = {
 
 export function homePathForRole(role: UserRole): string {
   return role === 'customer' ? '/customer-dashboard' : '/';
+}
+
+const CUSTOMER_ROUTES = [
+  '/customer-dashboard',
+  '/reservations',
+  '/loyalty',
+  '/customers',
+  '/settings',
+];
+
+const STAFF_ROUTES = [
+  '/',
+  '/staff-dashboard',
+  '/reservations',
+  '/live-sessions',
+  '/customers',
+  '/waiting-list',
+  '/sales',
+  '/inventory',
+  '/hardware',
+  '/lost-found',
+];
+
+export function canAccessRoute(role: UserRole, path: string): boolean {
+  if (role === 'customer') return CUSTOMER_ROUTES.includes(path);
+  if (role === 'staff') return STAFF_ROUTES.includes(path);
+  return true;
 }
 
 export function initialsFor(name: string): string {

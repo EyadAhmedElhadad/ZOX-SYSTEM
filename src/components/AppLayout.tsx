@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { canAccessRoute, homePathForRole } from '@/lib/demoAccounts';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,13 +16,19 @@ export default function AppLayout({ children, currentPath, role = 'staff' }: App
   const { user, ready } = useAuth();
 
   useEffect(() => {
-    if (ready && !user) {
+    if (!ready) return;
+    if (!user) {
       router.replace('/sign-up-login-screen');
+      return;
     }
-  }, [user, ready, router]);
+    if (!canAccessRoute(user.role, currentPath)) {
+      router.replace(homePathForRole(user.role));
+    }
+  }, [user, ready, role, currentPath, router]);
 
   if (!ready) return null;
   if (!user) return null;
+  if (!canAccessRoute(user.role, currentPath)) return null;
 
   return (
     <div className="flex min-h-screen bg-background">

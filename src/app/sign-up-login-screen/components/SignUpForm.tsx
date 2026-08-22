@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, UserPlus, User, Mail, Phone, Lock, KeyRound } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface SignUpFormData {
   name: string;
@@ -16,6 +18,7 @@ export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { register: registerAccount } = useAuth();
 
   const {
     register,
@@ -26,11 +29,20 @@ export default function SignUpForm() {
 
   const password = watch('password');
 
-  const onSubmit = async (_data: SignUpFormData) => {
+  const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
-    // Backend integration point: POST /api/auth/register with customer profile data
-    await new Promise((r) => setTimeout(r, 1200));
+    const created = registerAccount({
+      name: data.name.trim(),
+      email: data.email.trim().toLowerCase(),
+      phone: data.phone.trim(),
+      password: data.password,
+    });
     setIsLoading(false);
+    if (created) {
+      toast.success(`Welcome, ${created.name}! Your account is ready.`);
+    } else {
+      toast.error('An account with this email already exists. Please log in.');
+    }
   };
 
   const inputBase =

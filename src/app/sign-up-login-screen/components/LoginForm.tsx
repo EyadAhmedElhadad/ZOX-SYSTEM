@@ -40,7 +40,7 @@ export default function LoginForm() {
     setIsLoading(true);
     // Backend integration point: POST /api/auth/login with { email, password }
     await new Promise((r) => setTimeout(r, 1200));
-    const account = login(data.email, data.password);
+    const account = login(data.email, data.password, data.remember);
     if (!account) {
       setError('email', {
         message: 'Invalid credentials — use the demo accounts below to sign in',
