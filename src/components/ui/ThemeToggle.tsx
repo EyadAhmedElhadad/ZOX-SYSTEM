@@ -4,23 +4,27 @@ import { Moon, Sun } from 'lucide-react';
 
 type Theme = 'dark' | 'light';
 
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'dark';
-  try {
-    const stored = localStorage.getItem('zoox-theme');
-    if (stored === 'light' || stored === 'dark') return stored;
-  } catch {
-    /* ignore */
-  }
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  // Start deterministic so SSR and the first client render match. The real
+  // theme (from localStorage / prefers-color-scheme) is applied in useEffect,
+  // after hydration, to avoid a hydration mismatch on the title/icon.
+  const [theme, setTheme] = useState<Theme>('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    let initial: Theme = 'dark';
+    try {
+      const stored = localStorage.getItem('zoox-theme');
+      if (stored === 'light' || stored === 'dark') initial = stored;
+      else if (window.matchMedia?.('(prefers-color-scheme: light)').matches) initial = 'light';
+    } catch {
+      /* ignore */
+    }
+    setTheme(initial);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light');
   }, [theme]);
 

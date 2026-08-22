@@ -93,7 +93,7 @@ export default function StaffContent() {
       const name = newStaff.name.trim();
       await staffApi.create({
         name,
-        role: newStaff.role === 'Café Cashier' ? 'Cafe Cashier' : newStaff.role,
+        role: newStaff.role,
         email: newStaff.email.trim(),
         phone: newStaff.phone.trim(),
         shift: newStaff.shift,

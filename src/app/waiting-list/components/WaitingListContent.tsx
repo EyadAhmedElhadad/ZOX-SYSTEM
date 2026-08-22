@@ -1,12 +1,25 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Bell, Check, CheckCheck, Clock, ListPlus, Timer, UserPlus, Users, X } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Clock,
+  ListPlus,
+  MapPin,
+  Timer,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import {
   waitingApi,
+  roomsApi,
   useAsyncData,
   toastApiError,
   type UiWaitingEntry,
+  type UiRoom,
 } from '@/lib/api';
 
 type WaitingEntry = UiWaitingEntry;
@@ -63,7 +76,9 @@ function initials(name: string): string {
 
 export default function WaitingListContent() {
   const { data, loading, reload } = useAsyncData(() => waitingApi.list(), []);
+  const { data: roomData, reload: reloadRooms } = useAsyncData(() => roomsApi.list(), []);
   const entries = (data ?? []) as WaitingEntry[];
+  const rooms = (roomData ?? []) as UiRoom[];
   const [now, setNow] = useState<Date>(() => new Date());
   const [addOpen, setAddOpen] = useState(false);
   const [newEntry, setNewEntry] = useState({
@@ -82,6 +97,7 @@ export default function WaitingListContent() {
   const queue = [...entries].sort(
     (a, b) => parseJoined(a.joinedAt).getTime() - parseJoined(b.joinedAt).getTime()
   );
+  const availableRooms = rooms.filter((room) => room.status === 'Available');
 
   const waitingNow = entries.filter((e) => e.status === 'Waiting').length;
   const notified = entries.filter((e) => e.status === 'Notified').length;
@@ -133,6 +149,16 @@ export default function WaitingListContent() {
       await waitingApi.seat(entry.id, null);
       toast.success(`${entry.name} seated`);
       reload();
+    } catch (err) {
+      toastApiError(err);
+    }
+  };
+
+  const handleSeatToRoom = async (entry: WaitingEntry, room: UiRoom) => {
+    try {
+      await waitingApi.seat(entry.id, room.id);
+      toast.success(`${entry.name} assigned to ${room.name}`);
+      await Promise.all([reload(), reloadRooms()]);
     } catch (err) {
       toastApiError(err);
     }
@@ -276,10 +302,10 @@ export default function WaitingListContent() {
                       {waitingMinutes === 0 ? 'just now' : 'waiting'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {entry.status !== 'Seated' && entry.status !== 'Cancelled' && (
-                      <>
-                        {entry.status === 'Waiting' && (
+                <div className="flex items-center gap-1.5">
+                  {entry.status !== 'Seated' && entry.status !== 'Cancelled' && (
+                    <>
+                      {entry.status === 'Waiting' && (
                           <button
                             onClick={() => handleNotify(entry)}
                             className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-info/10 border border-info/25 text-info hover:bg-info/20 transition-all duration-150"
@@ -289,14 +315,38 @@ export default function WaitingListContent() {
                             Notify
                           </button>
                         )}
-                        <button
-                          onClick={() => handleSeat(entry)}
-                          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
-                          title="Mark seated"
-                        >
-                          <Check size={12} />
-                          Seat
-                        </button>
+                        {availableRooms.length > 0 ? (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => handleSeatToRoom(entry, availableRooms[0])}
+                              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
+                              title={`Seat in ${availableRooms[0].name}`}
+                            >
+                              <Check size={12} />
+                              Seat now
+                            </button>
+                            {availableRooms.slice(1, 3).map((room) => (
+                              <button
+                                key={room.id}
+                                onClick={() => handleSeatToRoom(entry, room)}
+                                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-muted/30 border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-150"
+                                title={`Seat in ${room.name}`}
+                              >
+                                <MapPin size={12} />
+                                {room.name}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleSeat(entry)}
+                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
+                            title="Mark seated"
+                          >
+                            <Check size={12} />
+                            Seat
+                          </button>
+                        )}
                       </>
                     )}
                     <button
