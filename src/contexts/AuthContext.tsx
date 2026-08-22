@@ -1,110 +1,156 @@
 'use client';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import {
-  DemoAccount,
-  UserRole,
-  demoAccounts,
-  homePathForRole,
-  registerAccount,
-  findAccount,
-} from '@/lib/demoAccounts';
+
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { Session, User } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { homePathForRole } from '@/lib/auth-guards';
+import { roleBadgeColors } from '@/lib/demoAccounts';
+import type { Database } from '@/lib/supabase/types';
+
+type UserRole = Database['public']['Tables']['profiles']['Row']['role'];
+
+export interface ZooxUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  color: string;
+}
+
+interface RegisterData {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+}
 
 interface AuthContextValue {
-  user: DemoAccount | null;
+  user: ZooxUser | null;
   role: UserRole | null;
   ready: boolean;
-  login: (email: string, password: string, remember?: boolean) => DemoAccount | null;
-  register: (data: {
-    name: string;
-    email: string;
-    phone?: string;
-    password: string;
-  }) => DemoAccount | null;
-  switchAccount: (email: string) => void;
-  logout: () => void;
+  login: (email: string, password: string, remember?: boolean) => Promise<ZooxUser | null>;
+  register: (data: RegisterData) => Promise<ZooxUser | null>;
+  sendMagicLink: (email: string) => Promise<boolean>;
+  switchAccount?: undefined;
+  logout: () => Promise<void>;
   homePath: () => string;
 }
 
-const STORAGE_KEY = 'zoox-current-user';
-const SESSION_KEY = 'zoox-current-user-session';
-
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function toZooxUser(user: User, profile?: { full_name: string; phone: string; role: UserRole } | null): ZooxUser {
+  const role = (profile?.role ?? 'customer') as UserRole;
+  return {
+    id: user.id,
+    name: profile?.full_name ?? (user.user_metadata?.full_name as string) ?? user.email ?? 'User',
+    email: user.email ?? '',
+    phone: profile?.phone ?? (user.user_metadata?.phone as string) ?? '',
+    role,
+    color: roleBadgeColors[role],
+  };
+}
+
+async function loadProfile(userId: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data } = await supabase
+    .from('profiles')
+    .select('full_name, phone, role')
+    .eq('id', userId)
+    .single();
+  return data as { full_name: string; phone: string; role: UserRole } | null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<DemoAccount | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Awaited<ReturnType<typeof loadProfile>>>(null);
   const [ready, setReady] = useState(false);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(SESSION_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as DemoAccount;
-        if (findAccount(parsed.email)) {
-          setUser(parsed);
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-          sessionStorage.removeItem(SESSION_KEY);
-        }
+    mounted.current = true;
+    const supabase = getSupabaseBrowserClient();
+
+    const applySession = async (nextSession: Session | null) => {
+      setSession(nextSession);
+      if (nextSession?.user) {
+        const p = await loadProfile(nextSession.user.id);
+        if (mounted.current) setProfile(p);
+      } else if (mounted.current) {
+        setProfile(null);
       }
-    } catch {
-      /* ignore */
-    }
-    setReady(true);
+      if (mounted.current) setReady(true);
+    };
+
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void applySession(nextSession);
+    });
+
+    return () => {
+      mounted.current = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  const persist = (account: DemoAccount | null, remember = true) => {
-    try {
-      if (account) {
-        localStorage.removeItem(SESSION_KEY);
-        sessionStorage.removeItem(SESSION_KEY);
-        if (remember) localStorage.setItem(STORAGE_KEY, JSON.stringify(account));
-        else sessionStorage.setItem(SESSION_KEY, JSON.stringify(account));
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-        sessionStorage.removeItem(SESSION_KEY);
-      }
-    } catch {
-      /* ignore */
+  const user = useMemo(
+    () => (session?.user ? toZooxUser(session.user, profile) : null),
+    [session, profile]
+  );
+
+  const login = useCallback(async (email: string, password: string): Promise<ZooxUser | null> => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.session) return null;
+    setSession(data.session);
+    const p = await loadProfile(data.user.id);
+    setProfile(p);
+    return toZooxUser(data.user, p);
+  }, []);
+
+  const register = useCallback(async (data: RegisterData): Promise<ZooxUser | null> => {
+    const supabase = getSupabaseBrowserClient();
+    const { data: res, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: { data: { full_name: data.name, phone: data.phone ?? '' } },
+    });
+    if (error || !res.user) return null;
+    // Profile row is auto-created by the handle_new_user trigger.
+    const p = res.session ? await loadProfile(res.user.id) : null;
+    if (res.session) {
+      setSession(res.session);
+      setProfile(p);
     }
-  };
+    return toZooxUser(res.user, p);
+  }, []);
 
-  const login = (email: string, password: string, remember = true): DemoAccount | null => {
-    const found = demoAccounts.find((a) => a.email === email && a.password === password) ?? null;
-    if (found) {
-      setUser(found);
-      persist(found, remember);
-    }
-    return found;
-  };
+  const sendMagicLink = useCallback(async (email: string): Promise<boolean> => {
+    const supabase = getSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    return !error;
+  }, []);
 
-  const register = (data: {
-    name: string;
-    email: string;
-    phone?: string;
-    password: string;
-  }): DemoAccount | null => {
-    const created = registerAccount(data);
-    if (created) {
-      setUser(created);
-      persist(created);
-    }
-    return created;
-  };
+  const logout = useCallback(async () => {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    setSession(null);
+    setProfile(null);
+  }, []);
 
-  const switchAccount = (email: string) => {
-    const found = demoAccounts.find((a) => a.email === email) ?? null;
-    if (found) {
-      setUser(found);
-      persist(found);
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    persist(null);
-  };
-
-  const homePath = () => homePathForRole(user?.role ?? 'staff');
+  const homePath = useCallback(() => homePathForRole(user?.role ?? 'staff'), [user]);
 
   return (
     <AuthContext.Provider
@@ -114,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ready,
         login,
         register,
-        switchAccount,
+        sendMagicLink,
         logout,
         homePath,
       }}

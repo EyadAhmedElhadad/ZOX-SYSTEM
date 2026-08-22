@@ -1,9 +1,9 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X, Repeat } from 'lucide-react';
+import { Check, X, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { DemoAccount, demoAccounts, roleLabels, initialsFor } from '@/lib/demoAccounts';
+import { demoAccounts, roleLabels, initialsFor } from '@/lib/demoAccounts';
 
 interface AccountSwitcherProps {
   onClose: () => void;
@@ -11,12 +11,13 @@ interface AccountSwitcherProps {
 
 export default function AccountSwitcher({ onClose }: AccountSwitcherProps) {
   const router = useRouter();
-  const { user, switchAccount } = useAuth();
+  const { user, logout } = useAuth();
 
-  const handleSwitch = (account: DemoAccount) => {
-    switchAccount(account.email);
-    onClose();
-    router.push(homePathFor(account.role));
+  const handleSignOutTo = () => {
+    void logout().then(() => {
+      onClose();
+      router.push('/sign-up-login-screen');
+    });
   };
 
   return (
@@ -25,8 +26,10 @@ export default function AccountSwitcher({ onClose }: AccountSwitcherProps) {
       <div className="relative w-full max-w-md card-base p-6 fade-in">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Switch Account</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Sign in as a different role</p>
+            <h2 className="text-lg font-bold text-foreground">Account</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Switching roles requires signing in
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -42,7 +45,8 @@ export default function AccountSwitcher({ onClose }: AccountSwitcherProps) {
             return (
               <button
                 key={account.email}
-                onClick={() => handleSwitch(account)}
+                onClick={isActive ? undefined : handleSignOutTo}
+                disabled={isActive}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-150 text-left ${
                   isActive
                     ? 'border-primary/50 bg-primary/5 cursor-default'
@@ -51,20 +55,28 @@ export default function AccountSwitcher({ onClose }: AccountSwitcherProps) {
               >
                 <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
                   <span className="text-xs font-bold text-primary">
-                    {initialsFor(account.name)}
+                    {initialsFor(user && isActive ? user.name : account.name)}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{account.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{account.email}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {isActive ? user?.name : account.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {isActive ? user?.email : account.email}
+                  </p>
                 </div>
-                <span className={`text-xs font-bold flex-shrink-0 ${account.color}`}>
+                <span
+                  className={`text-xs font-bold flex-shrink-0 ${
+                    isActive ? user?.color ?? '' : account.color
+                  }`}
+                >
                   {roleLabels[account.role]}
                 </span>
                 {isActive ? (
                   <Check size={15} className="text-accent flex-shrink-0" />
                 ) : (
-                  <Repeat size={15} className="text-muted-foreground flex-shrink-0" />
+                  <LogOut size={15} className="text-muted-foreground flex-shrink-0" />
                 )}
               </button>
             );
@@ -73,8 +85,4 @@ export default function AccountSwitcher({ onClose }: AccountSwitcherProps) {
       </div>
     </div>
   );
-}
-
-function homePathFor(role: DemoAccount['role']): string {
-  return role === 'customer' ? '/customer-dashboard' : '/';
 }

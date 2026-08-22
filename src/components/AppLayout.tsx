@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { canAccessRoute, homePathForRole } from '@/lib/demoAccounts';
+import { canAccessRoute, homePathForRole } from '@/lib/auth-guards';
 
 interface AppLayoutProps {
   children: React.ReactNode;
