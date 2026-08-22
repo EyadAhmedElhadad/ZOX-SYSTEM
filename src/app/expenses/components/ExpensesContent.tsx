@@ -49,8 +49,8 @@ function expenseMonth(date: string) {
 
 function lastMonth() {
   const now = new Date();
-  if (now.getMonth() === 0) return { y: now.getFullYear() - 1, m: 11 };
-  return { y: now.getFullYear(), m: now.getMonth() - 1 };
+  if (now.getMonth() === 0) return { y: now.getFullYear() - 1, m: 12 };
+  return { y: now.getFullYear(), m: now.getMonth() };
 }
 
 export default function ExpensesContent() {
@@ -72,7 +72,7 @@ export default function ExpensesContent() {
   });
 
   const now = new Date();
-  const thisM = { y: now.getFullYear(), m: now.getMonth() };
+  const thisM = { y: now.getFullYear(), m: now.getMonth() + 1 };
   const lastM = lastMonth();
 
   const filtered = expenses

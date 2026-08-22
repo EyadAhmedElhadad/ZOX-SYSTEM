@@ -78,6 +78,7 @@ export function addWaiting(data: Omit<WaitingEntry, 'id' | 'joinedAt' | 'status'
   const now = new Date().toLocaleString('en-GB', {
     day: '2-digit',
     month: '2-digit',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });

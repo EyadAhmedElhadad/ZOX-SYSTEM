@@ -70,7 +70,7 @@ export const seedCustomers: Customer[] = [
     visits: 27,
     totalSpent: 4300,
     loyaltyPoints: 2580,
-    tier: 'Silver',
+    tier: 'Gold',
     lastVisit: '2026-08-11',
     notes: 'Billiards fan, brings groups.',
   },

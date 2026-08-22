@@ -84,7 +84,15 @@ export default function WaitingListContent() {
 
   const waitingNow = entries.filter((e) => e.status === 'Waiting').length;
   const notified = entries.filter((e) => e.status === 'Notified').length;
-  const seatedToday = entries.filter((e) => e.status === 'Seated').length;
+  const seatedToday = entries.filter((e) => {
+    if (e.status !== 'Seated') return false;
+    const joined = parseJoined(e.joinedAt);
+    return (
+      joined.getFullYear() === now.getFullYear() &&
+      joined.getMonth() === now.getMonth() &&
+      joined.getDate() === now.getDate()
+    );
+  }).length;
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
