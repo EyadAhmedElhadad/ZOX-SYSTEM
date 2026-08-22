@@ -21,6 +21,7 @@ export const sessionsData = initialSessions;
 export default function LiveSessionsContent() {
   const [sessions, setSessions] = useState<LiveSession[]>(initialSessions);
   const [paymentTarget, setPaymentTarget] = useState<LiveSession | null>(null);
+  const [paymentElapsedMin, setPaymentElapsedMin] = useState(0);
   const [evaluationTarget, setEvaluationTarget] = useState<LiveSession | null>(null);
   const [addProductTarget, setAddProductTarget] = useState<LiveSession | null>(null);
   const [quickActionTarget, setQuickActionTarget] = useState<LiveSession | null>(null);
@@ -60,7 +61,8 @@ export default function LiveSessionsContent() {
     );
   };
 
-  const handleEndSession = (session: LiveSession) => {
+  const handleEndSession = (session: LiveSession, elapsedMin: number) => {
+    setPaymentElapsedMin(elapsedMin);
     setPaymentTarget(session);
   };
 
@@ -160,6 +162,7 @@ export default function LiveSessionsContent() {
         {paymentTarget && (
           <PaymentModal
             session={paymentTarget}
+            elapsedMin={paymentElapsedMin}
             onClose={() => setPaymentTarget(null)}
             onPaymentComplete={handlePaymentComplete}
           />

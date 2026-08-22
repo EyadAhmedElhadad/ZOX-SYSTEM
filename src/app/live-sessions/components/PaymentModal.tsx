@@ -34,6 +34,7 @@ const paymentMethods: {
 
 interface PaymentModalProps {
   session: LiveSession;
+  elapsedMin: number;
   onClose: () => void;
   onPaymentComplete: (sessionId: string) => void;
 }
@@ -45,18 +46,30 @@ function formatElapsed(minutes: number): string {
   return `${m}m`;
 }
 
-export default function PaymentModal({ session, onClose, onPaymentComplete }: PaymentModalProps) {
+export default function PaymentModal({
+  session,
+  elapsedMin: initialElapsedMin,
+  onClose,
+  onPaymentComplete,
+}: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [cashReceived, setCashReceived] = useState('');
-  const [elapsedMin, setElapsedMin] = useState(session.startMinutesAgo);
+  const [elapsedMin, setElapsedMin] = useState(initialElapsedMin);
+  const isPaused = session.status === 'paused';
 
   useEffect(() => {
+    if (isPaused) return;
     const interval = setInterval(() => setElapsedMin((m) => m + 1), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isPaused]);
 
-  const sessionCost = Math.round((elapsedMin / 60) * session.hourlyRate);
+  const billedMinutes =
+    session.sessionType === 'fixed'
+      ? Math.min(elapsedMin, (session.fixedDurationMinutes ?? 0) + (session.extendedMinutes ?? 0))
+      : elapsedMin;
+
+  const sessionCost = Math.round((billedMinutes / 60) * session.hourlyRate);
   const productsCost = session.products.reduce((s, p) => s + p.price * p.qty, 0);
   const total = sessionCost + productsCost;
   const cashReceivedNum = parseFloat(cashReceived) || 0;
@@ -101,7 +114,7 @@ export default function PaymentModal({ session, onClose, onPaymentComplete }: Pa
             </p>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                Session ({formatElapsed(elapsedMin)} × {session.hourlyRate} EGP/hr)
+                Session ({formatElapsed(billedMinutes)} × {session.hourlyRate} EGP/hr)
               </span>
               <span className="font-tabular font-semibold text-foreground">
                 {sessionCost.toLocaleString()} EGP

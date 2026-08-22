@@ -17,7 +17,7 @@ interface SessionsGridProps {
   onAddProduct: (session: LiveSession) => void;
   onQuickAction: (session: LiveSession) => void;
   onTogglePause: (sessionId: string) => void;
-  onEndSession: (session: LiveSession) => void;
+  onEndSession: (session: LiveSession, elapsedMin: number) => void;
 }
 
 const PAGE_SIZE = 5;
@@ -277,7 +277,7 @@ export default function SessionsGrid({
                           {isPaused ? <Play size={13} /> : <Pause size={13} />}
                         </button>
                         <button
-                          onClick={() => onEndSession(session)}
+                          onClick={() => onEndSession(session, elapsedMin)}
                           className="ml-1 flex items-center gap-1.5 bg-accent/15 border border-accent/25 text-accent hover:bg-accent/25 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 whitespace-nowrap"
                         >
                           <CreditCard size={13} />
