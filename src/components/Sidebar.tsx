@@ -231,7 +231,7 @@ function SidebarContent({
       {/* CTA */}
       {!collapsed && (
         <div className="px-4 py-3">
-          <button className="w-full bg-primary text-primary-foreground font-semibold text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-primary">
+          <button className="w-full bg-primary text-primary-foreground font-semibold text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all duration-150 glow-primary active:scale-95">
             <span className="text-lg leading-none">+</span> New Session
           </button>
         </div>
@@ -268,7 +268,7 @@ function SidebarContent({
               <Link
                 key={`nav-${item.href}`}
                 href={item.href === '/staff-dashboard' ? '/' : item.href}
-                className={`nav-item mb-0.5 relative ${isActive(item.href) ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`}
+                className={`nav-item mb-0.5 relative ${isActive(item.href) ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''} hover:translate-x-0.5`}
                 title={collapsed ? item.label : undefined}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
@@ -291,7 +291,7 @@ function SidebarContent({
       <div className="border-t border-border p-2">
         <button
           onClick={onSwitchAccount}
-          className={`nav-item w-full mb-1 ${collapsed ? 'justify-center' : ''}`}
+          className={`nav-item w-full mb-1 ${collapsed ? 'justify-center' : ''} hover:bg-muted/70`}
           title={collapsed ? 'Switch Account' : undefined}
         >
           <Repeat size={18} />
@@ -301,7 +301,7 @@ function SidebarContent({
           <ThemeToggle />
           <button
             onClick={onSignOut}
-            className={`nav-item flex-1 ${collapsed ? 'justify-center' : ''}`}
+            className={`nav-item flex-1 ${collapsed ? 'justify-center' : ''} hover:bg-muted/70`}
             title={collapsed ? 'Sign Out' : undefined}
           >
             <LogOut size={18} />
@@ -310,7 +310,7 @@ function SidebarContent({
         </div>
         <button
           onClick={onToggleCollapsed}
-          className={`nav-item w-full ${collapsed ? 'justify-center' : ''}`}
+          className={`nav-item w-full ${collapsed ? 'justify-center' : ''} hover:bg-muted/70`}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           {!collapsed && <span>Collapse</span>}
@@ -397,7 +397,7 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 bg-card border border-border rounded-lg p-2 text-foreground"
+        className="lg:hidden fixed top-4 left-4 z-50 bg-card/90 backdrop-blur border border-border rounded-lg p-2 text-foreground shadow-lg"
       >
         <Menu size={20} />
       </button>
@@ -406,7 +406,7 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-64 bg-card border-r border-border h-full z-10 slide-in-right">
+          <div className="relative w-64 bg-card border-r border-border h-full z-10 slide-in-right shadow-2xl">
             <button
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"

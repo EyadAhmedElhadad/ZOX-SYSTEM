@@ -49,20 +49,20 @@ export default function DashboardTopBar() {
           <input
             type="text"
             placeholder="Quick search customer..."
-            className="glass-panel pl-9 w-56 text-sm h-10 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            className="glass-panel pl-9 w-56 text-sm h-10 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all duration-150 hover:border-primary/40"
           />
         </div>
-        <div className="flex items-center gap-2 glass-panel rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 glass-panel rounded-xl px-3 py-2 glow-hover">
           <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
           <span className="font-data-mono text-sm font-semibold text-foreground">
             {currentTime}
           </span>
         </div>
-        <button className="relative p-2.5 glass-panel rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+        <button className="relative p-2.5 glass-panel rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-150 active:scale-95">
           <Bell size={18} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full ring-2 ring-[#0d1c2d]" />
         </button>
-        <button className="p-2.5 glass-panel rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+        <button className="p-2.5 glass-panel rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-150 active:scale-95">
           <RefreshCw size={18} />
         </button>
         <ThemeToggle />

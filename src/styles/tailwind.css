@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #051424;
+  --background: #04111f;
   --foreground: #d4e4fa;
   --primary: #7c3aed;
   --primary-foreground: #ede0ff;
@@ -33,10 +33,11 @@
   --room-occupied: #ff8a80;
   --room-reserved: #e9c400;
   --room-maintenance: #958da1;
+  --surface-glow: rgba(124, 58, 237, 0.18);
 }
 
 .light {
-  --background: #f6f3ff;
+  --background: #f5f7fb;
   --foreground: #1c1b2e;
   --primary: #7c3aed;
   --primary-foreground: #ffffff;
@@ -56,6 +57,7 @@
   --success: #0d9e6e;
   --info: #3b82f6;
   --vip: #b58a00;
+  --surface-glow: rgba(124, 58, 237, 0.12);
 }
 
 @layer base {
@@ -65,7 +67,10 @@
   }
 
   body {
-    background-color: var(--background);
+    background:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34%),
+      radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 30%),
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 96%, white 4%), var(--background));
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -110,19 +115,21 @@
   }
 
   .glass-panel {
-    background: rgba(13, 28, 45, 0.72);
+    background: color-mix(in srgb, var(--card) 84%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid #273647;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
   }
 
   .glow-hover {
-    transition: all 0.2s ease;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
   }
 
   .glow-hover:hover {
-    border-color: #7c3aed;
-    box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+    border-color: color-mix(in srgb, var(--primary) 60%, white 10%);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 24%, transparent), 0 16px 40px rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
   }
 
   .vip-border {
@@ -214,16 +221,26 @@
   }
 
   .fade-in {
-    animation: fadeIn 0.2s ease forwards;
+    animation: fadeIn 220ms ease forwards;
   }
 
   .slide-in-right {
-    animation: slideInRight 0.25s ease forwards;
+    animation: slideInRight 260ms ease forwards;
   }
 
   .slide-up {
-    animation: slideUp 0.2s ease forwards;
+    animation: slideUp 220ms ease forwards;
   }
+
+  .stagger-in > * {
+    animation: fadeIn 260ms ease both;
+  }
+
+  .stagger-in > *:nth-child(1) { animation-delay: 40ms; }
+  .stagger-in > *:nth-child(2) { animation-delay: 80ms; }
+  .stagger-in > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger-in > *:nth-child(4) { animation-delay: 160ms; }
+  .stagger-in > *:nth-child(5) { animation-delay: 200ms; }
 }
 
 @layer components {
@@ -255,6 +272,7 @@
   }
 .nav-item-active  {
     @apply text-accent border;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
