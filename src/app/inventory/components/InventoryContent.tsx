@@ -197,8 +197,28 @@ const statusStyles: Record<StockStatus, string> = {
   'Out of Stock': 'bg-danger/10 text-danger border border-danger/20',
 };
 
+const STORAGE_KEY = 'zoox-inventory';
+
+function loadInventory(): InventoryItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as InventoryItem[];
+  } catch {
+    /* ignore */
+  }
+  return mockInventory;
+}
+
+function saveInventory(items: InventoryItem[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function InventoryContent() {
-  const [items, setItems] = useState<InventoryItem[]>(mockInventory);
+  const [items, setItems] = useState<InventoryItem[]>(() => loadInventory());
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
@@ -237,7 +257,7 @@ export default function InventoryContent() {
     const stock = Number(newItem.stock) || 0;
     const reorderLevel = Math.max(5, Math.ceil(stock * 0.35));
     const item: InventoryItem = {
-      id: `inv-${String(items.length + 1).padStart(3, '0')}`,
+      id: `inv-${Date.now()}`,
       name: newItem.name.trim(),
       category: newItem.category,
       sku: newItem.sku.trim().toUpperCase(),
@@ -248,15 +268,46 @@ export default function InventoryContent() {
       lastRestocked: new Date().toISOString().slice(0, 10),
       status: getStatus(stock, reorderLevel),
     };
-    setItems((prev) => [item, ...prev]);
+    setItems((prev) => {
+      const next = [item, ...prev];
+      saveInventory(next);
+      return next;
+    });
     setNewItem({ name: '', category: 'Drinks', sku: '', stock: 0, unitPrice: 0 });
     setAddOpen(false);
     toast.success(`${item.name} added to inventory`);
   };
 
   const handleStatusChange = (id: string, status: StockStatus) => {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+    setItems((prev) => {
+      const next = prev.map((item) =>
+        item.id === id
+          ? { ...item, status, stock: status === 'Out of Stock' ? 0 : item.stock }
+          : item
+      );
+      saveInventory(next);
+      return next;
+    });
     toast.success(`Status updated to ${status}`);
+  };
+
+  const handleExport = () => {
+    const header = 'Name,Category,SKU,Stock,Reorder Level,Unit Price,Supplier,Status';
+    const rows = items.map((i) =>
+      [i.name, i.category, i.sku, i.stock, i.reorderLevel, i.unitPrice, i.supplier, i.status]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(',')
+    );
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zoox-inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Inventory exported as CSV');
   };
 
   const lowStockCount = items.filter((i) => i.status === 'Low Stock').length;
@@ -276,7 +327,7 @@ export default function InventoryContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn-secondary flex items-center gap-2 h-9">
+          <button onClick={handleExport} className="btn-secondary flex items-center gap-2 h-9">
             <Download size={14} />
             Export
           </button>
