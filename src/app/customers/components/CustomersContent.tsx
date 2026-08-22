@@ -2,12 +2,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Crown, Search, Sparkles, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { addCustomer, deleteCustomer, loadCustomers, updateCustomer } from '@/data/customers';
-import type { Customer } from '@/data/customers';
+import { customersApi, useAsyncData, toastApiError } from '@/lib/api';
+import type { UiCustomer } from '@/lib/api';
 
-const tiers: (Customer['tier'] | 'All')[] = ['All', 'Bronze', 'Silver', 'Gold', 'VIP'];
+const tiers: (UiCustomer['tier'] | 'All')[] = ['All', 'Bronze', 'Silver', 'Gold', 'VIP'];
 
-const tierStyles: Record<Customer['tier'], string> = {
+const tierStyles: Record<UiCustomer['tier'], string> = {
   Bronze: 'bg-muted text-muted-foreground border border-border',
   Silver: 'bg-info/10 text-info border border-info/20',
   Gold: 'bg-warning/10 text-warning border border-warning/20',
@@ -27,12 +27,13 @@ function initials(name: string): string {
 }
 
 export default function CustomersContent() {
-  const [customers, setCustomers] = useState<Customer[]>(() => loadCustomers());
+  const { data, loading, reload } = useAsyncData(() => customersApi.list(), []);
+  const customers = data ?? [];
   const [searchQuery, setSearchQuery] = useState('');
-  const [tierFilter, setTierFilter] = useState<Customer['tier'] | 'All'>('All');
+  const [tierFilter, setTierFilter] = useState<UiCustomer['tier'] | 'All'>('All');
   const [addOpen, setAddOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [pointsTarget, setPointsTarget] = useState<Customer | null>(null);
+  const [pointsTarget, setPointsTarget] = useState<UiCustomer | null>(null);
   const [pointsAmount, setPointsAmount] = useState(100);
   const confirmRef = useRef<number | null>(null);
 
@@ -48,6 +49,10 @@ export default function CustomersContent() {
       if (confirmRef.current) window.clearTimeout(confirmRef.current);
     };
   }, []);
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   const filtered = customers.filter((c) => {
     const q = searchQuery.toLowerCase();
@@ -66,25 +71,29 @@ export default function CustomersContent() {
     ? Math.round(customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length)
     : 0;
 
-  const handleAddCustomer = (e: React.FormEvent) => {
+  const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustomer.name.trim()) {
       toast.error('Customer name is required');
       return;
     }
-    const next = addCustomer({
-      name: newCustomer.name.trim(),
-      phone: newCustomer.phone.trim() || '—',
-      email: newCustomer.email.trim() || '—',
-      notes: newCustomer.notes.trim(),
-    });
-    setCustomers(next);
-    setNewCustomer({ name: '', phone: '', email: '', notes: '' });
-    setAddOpen(false);
-    toast.success(`${newCustomer.name.trim()} added to customers`);
+    try {
+      await customersApi.create({
+        name: newCustomer.name.trim(),
+        phone: newCustomer.phone.trim() || '—',
+        email: newCustomer.email.trim() || '—',
+        notes: newCustomer.notes.trim(),
+      });
+      setNewCustomer({ name: '', phone: '', email: '', notes: '' });
+      setAddOpen(false);
+      toast.success(`${newCustomer.name.trim()} added to customers`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleDelete = (customer: Customer) => {
+  const handleDelete = async (customer: UiCustomer) => {
     if (confirmId !== customer.id) {
       setConfirmId(customer.id);
       if (confirmRef.current) window.clearTimeout(confirmRef.current);
@@ -93,12 +102,16 @@ export default function CustomersContent() {
     }
     if (confirmRef.current) window.clearTimeout(confirmRef.current);
     setConfirmId(null);
-    const next = deleteCustomer(customer.id);
-    setCustomers(next);
-    toast.success(`${customer.name} removed from customers`);
+    try {
+      await customersApi.remove(customer.id);
+      toast.success(`${customer.name} removed from customers`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleAddPoints = (e: React.FormEvent) => {
+  const handleAddPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pointsTarget) return;
     const amount = Math.max(0, Math.round(Number(pointsAmount) || 0));
@@ -106,16 +119,15 @@ export default function CustomersContent() {
       toast.error('Enter a positive points amount');
       return;
     }
-    const next = updateCustomer(pointsTarget.id, {
-      loyaltyPoints: pointsTarget.loyaltyPoints + amount,
-    });
-    const updated = next.find((c) => c.id === pointsTarget.id);
-    setCustomers(next);
-    if (updated) {
-      toast.success(`Added ${amount} points — ${pointsTarget.name} is now ${updated.tier}`);
+    try {
+      await customersApi.adjustPoints(pointsTarget.id, amount, 'Manual points added');
+      toast.success(`Added ${amount} points — ${pointsTarget.name}`);
+      setPointsTarget(null);
+      setPointsAmount(100);
+      reload();
+    } catch (err) {
+      toastApiError(err);
     }
-    setPointsTarget(null);
-    setPointsAmount(100);
   };
 
   return (
@@ -209,7 +221,7 @@ export default function CustomersContent() {
           {tiers.map((t) => (
             <button
               key={t}
-              onClick={() => setTierFilter(t as Customer['tier'] | 'All')}
+              onClick={() => setTierFilter(t as UiCustomer['tier'] | 'All')}
               className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors border ${
                 tierFilter === t
                   ? 'bg-primary text-primary-foreground border-primary'

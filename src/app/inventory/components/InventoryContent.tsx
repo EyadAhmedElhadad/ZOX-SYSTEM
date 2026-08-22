@@ -2,194 +2,13 @@
 import React, { useState } from 'react';
 import { Package, Plus, Search, Download, AlertTriangle, Boxes, Wallet, X } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
+import { inventoryApi, useAsyncData, toastApiError, type UiInventoryItem } from '@/lib/api';
 
-export type StockStatus = 'In Stock' | 'Low Stock' | 'Out of Stock';
+export type StockStatus = UiInventoryItem['status'];
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  sku: string;
-  stock: number;
-  reorderLevel: number;
-  unitPrice: number;
-  supplier: string;
-  lastRestocked: string;
-  status: StockStatus;
-}
+export type InventoryItem = UiInventoryItem;
 
 const categories = ['All', 'Drinks', 'Snacks', 'Controllers', 'Accessories'];
-
-export const mockInventory: InventoryItem[] = [
-  {
-    id: 'inv-001',
-    name: 'Pepsi 330ml',
-    category: 'Drinks',
-    sku: 'DRK-PEP-330',
-    stock: 120,
-    reorderLevel: 40,
-    unitPrice: 15,
-    supplier: 'Masrawy Beverages',
-    lastRestocked: '2026-08-05',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-002',
-    name: 'Coca-Cola 330ml',
-    category: 'Drinks',
-    sku: 'DRK-COK-330',
-    stock: 85,
-    reorderLevel: 40,
-    unitPrice: 15,
-    supplier: 'Masrawy Beverages',
-    lastRestocked: '2026-08-05',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-003',
-    name: 'Water 500ml',
-    category: 'Drinks',
-    sku: 'DRK-WTR-500',
-    stock: 200,
-    reorderLevel: 60,
-    unitPrice: 8,
-    supplier: 'Aqua Nile',
-    lastRestocked: '2026-08-06',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-004',
-    name: 'Orange Juice 250ml',
-    category: 'Drinks',
-    sku: 'DRK-JUS-250',
-    stock: 22,
-    reorderLevel: 25,
-    unitPrice: 20,
-    supplier: 'Fresh Press',
-    lastRestocked: '2026-08-03',
-    status: 'Low Stock',
-  },
-  {
-    id: 'inv-005',
-    name: 'Red Bull 250ml',
-    category: 'Drinks',
-    sku: 'DRK-RDB-250',
-    stock: 8,
-    reorderLevel: 30,
-    unitPrice: 45,
-    supplier: 'El Sharq Trading',
-    lastRestocked: '2026-07-28',
-    status: 'Low Stock',
-  },
-  {
-    id: 'inv-006',
-    name: "Lay's Chips - Salt",
-    category: 'Snacks',
-    sku: 'SNK-LYS-SLT',
-    stock: 64,
-    reorderLevel: 30,
-    unitPrice: 12,
-    supplier: 'Snack World',
-    lastRestocked: '2026-08-06',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-007',
-    name: 'Doritos - Cheese',
-    category: 'Snacks',
-    sku: 'SNK-DRT-CHS',
-    stock: 0,
-    reorderLevel: 25,
-    unitPrice: 12,
-    supplier: 'Snack World',
-    lastRestocked: '2026-07-20',
-    status: 'Out of Stock',
-  },
-  {
-    id: 'inv-008',
-    name: 'Indomie - Spicy',
-    category: 'Snacks',
-    sku: 'SNK-IND-SPY',
-    stock: 48,
-    reorderLevel: 35,
-    unitPrice: 18,
-    supplier: 'Snack World',
-    lastRestocked: '2026-08-04',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-009',
-    name: 'Chocolate Bar',
-    category: 'Snacks',
-    sku: 'SNK-CHO-BAR',
-    stock: 15,
-    reorderLevel: 20,
-    unitPrice: 25,
-    supplier: 'Candy House',
-    lastRestocked: '2026-08-01',
-    status: 'Low Stock',
-  },
-  {
-    id: 'inv-010',
-    name: 'PS5 DualSense White',
-    category: 'Controllers',
-    sku: 'CTR-PS5-WHT',
-    stock: 6,
-    reorderLevel: 3,
-    unitPrice: 1600,
-    supplier: 'Gamers Zone',
-    lastRestocked: '2026-07-15',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-011',
-    name: 'PS5 DualSense Black',
-    category: 'Controllers',
-    sku: 'CTR-PS5-BLK',
-    stock: 3,
-    reorderLevel: 3,
-    unitPrice: 1600,
-    supplier: 'Gamers Zone',
-    lastRestocked: '2026-07-15',
-    status: 'Low Stock',
-  },
-  {
-    id: 'inv-012',
-    name: 'Xbox Wireless Controller',
-    category: 'Controllers',
-    sku: 'CTR-XBX-WRL',
-    stock: 0,
-    reorderLevel: 4,
-    unitPrice: 1400,
-    supplier: 'Gamers Zone',
-    lastRestocked: '2026-06-20',
-    status: 'Out of Stock',
-  },
-  {
-    id: 'inv-013',
-    name: 'HDMI Cable 2m',
-    category: 'Accessories',
-    sku: 'ACC-HDMI-2M',
-    stock: 18,
-    reorderLevel: 10,
-    unitPrice: 80,
-    supplier: 'Tech Supplies Co',
-    lastRestocked: '2026-08-02',
-    status: 'In Stock',
-  },
-  {
-    id: 'inv-014',
-    name: 'USB-C Charging Cable',
-    category: 'Accessories',
-    sku: 'ACC-USBC-CHG',
-    stock: 25,
-    reorderLevel: 15,
-    unitPrice: 60,
-    supplier: 'Tech Supplies Co',
-    lastRestocked: '2026-08-02',
-    status: 'In Stock',
-  },
-];
 
 const statusStyles: Record<StockStatus, string> = {
   'In Stock': 'bg-accent/10 text-accent border border-accent/20',
@@ -197,28 +16,9 @@ const statusStyles: Record<StockStatus, string> = {
   'Out of Stock': 'bg-danger/10 text-danger border border-danger/20',
 };
 
-const STORAGE_KEY = 'zoox-inventory';
-
-function loadInventory(): InventoryItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as InventoryItem[];
-  } catch {
-    /* ignore */
-  }
-  return mockInventory;
-}
-
-function saveInventory(items: InventoryItem[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    /* ignore */
-  }
-}
-
 export default function InventoryContent() {
-  const [items, setItems] = useState<InventoryItem[]>(() => loadInventory());
+  const { data, loading, reload } = useAsyncData(() => inventoryApi.list(), []);
+  const items = data ?? [];
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<StockStatus | 'All'>('All');
@@ -248,7 +48,7 @@ export default function InventoryContent() {
     return 'In Stock';
   };
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.name.trim() || !newItem.sku.trim()) {
       toast.error('Name and SKU are required');
@@ -256,39 +56,42 @@ export default function InventoryContent() {
     }
     const stock = Number(newItem.stock) || 0;
     const reorderLevel = Math.max(5, Math.ceil(stock * 0.35));
-    const item: InventoryItem = {
-      id: `inv-${Date.now()}`,
-      name: newItem.name.trim(),
-      category: newItem.category,
-      sku: newItem.sku.trim().toUpperCase(),
-      stock,
-      reorderLevel,
-      unitPrice: Number(newItem.unitPrice) || 0,
-      supplier: '—',
-      lastRestocked: new Date().toISOString().slice(0, 10),
-      status: getStatus(stock, reorderLevel),
-    };
-    setItems((prev) => {
-      const next = [item, ...prev];
-      saveInventory(next);
-      return next;
-    });
-    setNewItem({ name: '', category: 'Drinks', sku: '', stock: 0, unitPrice: 0 });
-    setAddOpen(false);
-    toast.success(`${item.name} added to inventory`);
+    try {
+      await inventoryApi.create({
+        name: newItem.name.trim(),
+        category: newItem.category,
+        sku: newItem.sku.trim().toUpperCase(),
+        stock,
+        reorder_level: reorderLevel,
+        unit_price: Number(newItem.unitPrice) || 0,
+        supplier: '—',
+      });
+      setNewItem({ name: '', category: 'Drinks', sku: '', stock: 0, unitPrice: 0 });
+      setAddOpen(false);
+      toast.success(`${newItem.name.trim()} added to inventory`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleStatusChange = (id: string, status: StockStatus) => {
-    setItems((prev) => {
-      const next = prev.map((item) =>
-        item.id === id
-          ? { ...item, status, stock: status === 'Out of Stock' ? 0 : item.stock }
-          : item
-      );
-      saveInventory(next);
-      return next;
-    });
-    toast.success(`Status updated to ${status}`);
+  const handleStatusChange = async (id: string, status: StockStatus) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    try {
+      if (status === 'Out of Stock') {
+        await inventoryApi.adjust(id, -item.stock, 'Marked Out of Stock');
+      } else if (status === 'Low Stock') {
+        await inventoryApi.adjust(id, item.reorderLevel - item.stock, 'Marked Low Stock');
+      } else {
+        const target = item.stock <= 0 ? Math.max(item.reorderLevel, 1) : item.stock;
+        await inventoryApi.adjust(id, target - item.stock, 'Marked In Stock');
+      }
+      toast.success(`Status updated to ${status}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
   const handleExport = () => {
@@ -313,6 +116,10 @@ export default function InventoryContent() {
   const lowStockCount = items.filter((i) => i.status === 'Low Stock').length;
   const outCount = items.filter((i) => i.status === 'Out of Stock').length;
   const stockValue = items.reduce((sum, i) => sum + i.stock * i.unitPrice, 0);
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto">

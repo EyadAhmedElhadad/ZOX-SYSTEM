@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ReservationsHeader from './ReservationsHeader';
@@ -7,7 +7,8 @@ import ReservationsTable from './ReservationsTable';
 import ReservationDrawer from './ReservationDrawer';
 import QuickBookModal from './QuickBookModal';
 import RateCustomerModal from './RateCustomerModal';
-import { Toaster } from 'sonner';
+import { toast, Toaster } from 'sonner';
+import { reservationsApi, useAsyncData, toastApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type ReservationStatus =
@@ -32,383 +33,6 @@ export interface Reservation {
   category?: 'playstation' | 'billiards' | 'cafe';
 }
 
-export const mockReservations: Reservation[] = [
-  {
-    id: 'res-001',
-    customer: 'Mohamed Khalil',
-    phone: '01001234521',
-    room: 'Room 1',
-    roomType: 'Standard',
-    game: 'FC 26',
-    players: 2,
-    date: '2026-08-08',
-    time: '14:30',
-    duration: null,
-    status: 'Active',
-    sessionType: 'open',
-    createdBy: 'staff',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-002',
-    customer: 'Ahmed Samir',
-    phone: '01124568834',
-    room: 'Room 2',
-    roomType: 'Standard',
-    game: 'GTA V',
-    players: 4,
-    date: '2026-08-08',
-    time: '13:45',
-    duration: '120',
-    status: 'Active',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Loyal',
-  },
-  {
-    id: 'res-003',
-    customer: 'Omar Sherif',
-    phone: '01005671234',
-    room: 'Room 3',
-    roomType: 'Premium',
-    game: 'Call of Duty',
-    players: 2,
-    date: '2026-08-08',
-    time: '16:00',
-    duration: '60',
-    status: 'Reserved',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-    notes: 'First visit — new customer',
-  },
-  {
-    id: 'res-004',
-    customer: 'Karim Mostafa',
-    phone: '01119872267',
-    room: 'Room 4',
-    roomType: 'VIP',
-    game: 'FC 26',
-    players: 6,
-    date: '2026-08-08',
-    time: '14:00',
-    duration: null,
-    status: 'Active',
-    sessionType: 'open',
-    createdBy: 'staff',
-    customerStatus: 'VIP',
-    notes: 'VIP — extra drinks requested',
-  },
-  {
-    id: 'res-005',
-    customer: 'Tarek Samir',
-    phone: '01009871234',
-    room: 'Room 3',
-    roomType: 'Premium',
-    game: 'Call of Duty',
-    players: 2,
-    date: '2026-08-08',
-    time: '16:00',
-    duration: '60',
-    status: 'Reserved',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'New',
-  },
-  {
-    id: 'res-006',
-    customer: 'Nour Ibrahim',
-    phone: '01154321234',
-    room: 'Room 5',
-    roomType: 'Standard',
-    game: 'FC 26',
-    players: 4,
-    date: '2026-08-08',
-    time: '16:15',
-    duration: '90',
-    status: 'Reserved',
-    sessionType: 'fixed',
-    createdBy: 'staff',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-007',
-    customer: 'Hassan Mostafa',
-    phone: '01231456789',
-    room: 'Room 6',
-    roomType: 'Premium',
-    game: 'PES 2024',
-    players: 2,
-    date: '2026-08-08',
-    time: '12:00',
-    duration: '60',
-    status: 'Completed',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Loyal',
-  },
-  {
-    id: 'res-008',
-    customer: 'Ramy Adel',
-    phone: '01009876543',
-    room: 'Room 7',
-    roomType: 'Standard',
-    game: 'GTA V',
-    players: 2,
-    date: '2026-08-08',
-    time: '11:30',
-    duration: '60',
-    status: 'No Show',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Low Reliability',
-  },
-  {
-    id: 'res-009',
-    customer: 'Salma Youssef',
-    phone: '01122334455',
-    room: 'Room 8',
-    roomType: 'VIP',
-    game: 'FC 26',
-    players: 4,
-    date: '2026-08-08',
-    time: '17:00',
-    duration: null,
-    status: 'Waiting',
-    sessionType: 'open',
-    createdBy: 'staff',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-010',
-    customer: 'Walid Hassan',
-    phone: '01098765432',
-    room: 'Room 8',
-    roomType: 'VIP',
-    game: 'GTA V',
-    players: 6,
-    date: '2026-08-08',
-    time: '16:30',
-    duration: '90',
-    status: 'Reserved',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Loyal',
-  },
-  {
-    id: 'res-011',
-    customer: 'Dina Khaled',
-    phone: '01234567890',
-    room: 'Room 2',
-    roomType: 'Standard',
-    game: 'Call of Duty',
-    players: 2,
-    date: '2026-08-07',
-    time: '18:00',
-    duration: '60',
-    status: 'Completed',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'New',
-  },
-  {
-    id: 'res-012',
-    customer: 'Amr Nasser',
-    phone: '01001112233',
-    room: 'Room 1',
-    roomType: 'Standard',
-    game: 'FC 26',
-    players: 2,
-    date: '2026-08-07',
-    time: '20:00',
-    duration: '90',
-    status: 'Cancelled',
-    sessionType: 'fixed',
-    createdBy: 'staff',
-    customerStatus: 'Regular',
-    notes: 'Cancelled by customer — 2h before',
-  },
-  {
-    id: 'res-013',
-    customer: 'Hana Mostafa',
-    phone: '01123344556',
-    room: 'Waiting',
-    roomType: 'Premium',
-    game: 'FC 26',
-    players: 4,
-    date: '2026-08-08',
-    time: '17:30',
-    duration: '60',
-    status: 'Waiting',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-    notes: 'Waiting for Room 6 to free up',
-  },
-  {
-    id: 'res-014',
-    customer: 'Yara Emad',
-    phone: '01034455667',
-    room: 'Waiting',
-    roomType: 'VIP',
-    game: 'Call of Duty',
-    players: 6,
-    date: '2026-08-08',
-    time: '18:00',
-    duration: '120',
-    status: 'Waiting',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Loyal',
-    notes: 'Group birthday party — wants VIP room',
-  },
-  {
-    id: 'res-015',
-    customer: 'Mostafa Tarek',
-    phone: '01145566778',
-    room: 'Waiting',
-    roomType: 'Standard',
-    game: 'GTA V',
-    players: 2,
-    date: '2026-08-08',
-    time: '18:15',
-    duration: '90',
-    status: 'Waiting',
-    sessionType: 'fixed',
-    createdBy: 'staff',
-    customerStatus: 'New',
-  },
-  {
-    id: 'res-016',
-    customer: 'Rana Khaled',
-    phone: '01056677889',
-    room: 'Waiting',
-    roomType: 'Premium',
-    game: 'PES 2024',
-    players: 2,
-    date: '2026-08-08',
-    time: '18:30',
-    duration: '60',
-    status: 'Waiting',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-    notes: 'Waiting — 20 min so far',
-  },
-  {
-    id: 'res-017',
-    customer: 'Omar Fathy',
-    phone: '01167788990',
-    room: 'Waiting',
-    roomType: 'Standard',
-    game: 'FC 26',
-    players: 2,
-    date: '2026-08-08',
-    time: '19:00',
-    duration: '60',
-    status: 'Waiting',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'New',
-    notes: 'Walk-in — no room available',
-  },
-  {
-    id: 'res-020',
-    customer: 'Ahmed Khalil',
-    phone: '01005667890',
-    room: 'Room 1',
-    roomType: 'Standard',
-    game: 'FC 26',
-    players: 2,
-    date: '2026-08-08',
-    time: '15:00',
-    duration: null,
-    status: 'Active',
-    sessionType: 'open',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-021',
-    customer: 'Ahmed Khalil',
-    phone: '01005667890',
-    room: 'Room 3',
-    roomType: 'Standard',
-    game: 'Call of Duty',
-    players: 2,
-    date: '2026-08-09',
-    time: '18:00',
-    duration: '60',
-    status: 'Reserved',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-022',
-    customer: 'Ahmed Khalil',
-    phone: '01005667890',
-    room: 'Room 5',
-    roomType: 'Premium',
-    game: 'FC 26',
-    players: 2,
-    date: '2026-08-12',
-    time: '17:00',
-    duration: '120',
-    status: 'Reserved',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-023',
-    customer: 'Ahmed Khalil',
-    phone: '01005667890',
-    room: 'Room 2',
-    roomType: 'Standard',
-    game: 'FC 26',
-    players: 2,
-    date: '2026-08-05',
-    time: '18:30',
-    duration: '90',
-    status: 'Completed',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-024',
-    customer: 'Ahmed Khalil',
-    phone: '01005667890',
-    room: 'Room 8',
-    roomType: 'VIP',
-    game: 'GTA V',
-    players: 4,
-    date: '2026-08-02',
-    time: '20:00',
-    duration: '120',
-    status: 'Completed',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-  },
-  {
-    id: 'res-025',
-    customer: 'Ahmed Khalil',
-    phone: '01005667890',
-    room: 'Room 6',
-    roomType: 'Premium',
-    game: 'PES 2024',
-    players: 2,
-    date: '2026-07-29',
-    time: '21:00',
-    duration: '60',
-    status: 'Completed',
-    sessionType: 'fixed',
-    createdBy: 'customer',
-    customerStatus: 'Regular',
-  },
-];
 
 const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
@@ -533,7 +157,8 @@ export default function ReservationsContent() {
   const { user, role } = useAuth();
   const isCustomer = role === 'customer';
   const customerName = user?.name ?? '';
-  const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
+  const { data, loading, reload } = useAsyncData(() => reservationsApi.list(), []);
+  const reservations = (data ?? []).map((r): Reservation => ({ ...r, customerStatus: 'Regular' }));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | 'all'>('all');
@@ -554,14 +179,40 @@ export default function ReservationsContent() {
     return matchesCustomer && matchesSearch && matchesStatus && matchesDate;
   });
 
-  const handleAddReservation = (newRes: Reservation) => {
-    setReservations((prev) => [newRes, ...prev]);
-    setDateFilter(newRes.date);
-    setDrawerOpen(false);
+  const handleAddReservation = async (newRes: Reservation) => {
+    try {
+      await reservationsApi.create({
+        customer_id: null,
+        guest_name: newRes.customer,
+        phone: newRes.phone,
+        room_id: null,
+        category: newRes.category ?? 'playstation',
+        game: newRes.game,
+        players: newRes.players,
+        res_date: newRes.date,
+        res_time: newRes.time,
+        duration_minutes: newRes.duration ? Number(newRes.duration) : null,
+        session_kind: newRes.sessionType,
+        notes: newRes.notes ?? null,
+        created_by_role: newRes.createdBy,
+      });
+      setDateFilter(newRes.date);
+      setDrawerOpen(false);
+      toast.success('Reservation saved');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleStatusChange = (id: string, status: ReservationStatus) => {
-    setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+  const handleStatusChange = async (id: string, status: ReservationStatus) => {
+    try {
+      await reservationsApi.update(id, { status });
+      toast.success(`Reservation marked as ${status}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
   return (
@@ -573,6 +224,9 @@ export default function ReservationsContent() {
         count={filtered.length}
         isCustomer={isCustomer}
       />
+      {loading ? (
+        <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-6">
           <ReservationFilters
@@ -597,6 +251,7 @@ export default function ReservationsContent() {
           <CapacitySnapshot />
         </div>
       </div>
+      )}
       {drawerOpen && (
         <ReservationDrawer onClose={() => setDrawerOpen(false)} onSave={handleAddReservation} />
       )}

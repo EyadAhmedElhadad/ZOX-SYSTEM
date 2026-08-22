@@ -16,8 +16,11 @@ import {
   FolderX,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { loadLostFound, addLostFound, updateLostFound, claimItem } from '@/data/lostFound';
-import type { LostFoundItem, ItemCategory, ItemStatus } from '@/data/lostFound';
+import { lostFoundApi, useAsyncData, toastApiError, type UiLostFoundItem } from '@/lib/api';
+
+type ItemStatus = UiLostFoundItem['status'];
+type ItemCategory = UiLostFoundItem['category'];
+type LostFoundItem = UiLostFoundItem;
 
 const statusFilters: { id: ItemStatus | 'All'; label: string }[] = [
   { id: 'All', label: 'All' },
@@ -62,7 +65,8 @@ const initialForm = {
 };
 
 export default function LostFoundContent() {
-  const [items, setItems] = useState<LostFoundItem[]>(() => loadLostFound());
+  const { data, loading, reload } = useAsyncData(() => lostFoundApi.list(), []);
+  const items = data ?? [];
   const [statusFilter, setStatusFilter] = useState<ItemStatus | 'All'>('All');
   const [categoryFilter, setCategoryFilter] = useState<ItemCategory | 'All'>('All');
   const [logOpen, setLogOpen] = useState(false);
@@ -80,34 +84,30 @@ export default function LostFoundContent() {
     return matchesStatus && matchesCategory;
   });
 
-  const handleLogItem = (e: React.FormEvent) => {
+  const handleLogItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.description.trim()) {
       toast.error('Description is required');
       return;
     }
-    const foundAt = new Date().toLocaleString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    const next = addLostFound({
-      description: newItem.description.trim(),
-      category: newItem.category,
-      foundLocation: newItem.foundLocation.trim() || '—',
-      foundBy: newItem.foundBy.trim() || 'Staff',
-      foundAt,
-      notes: newItem.notes.trim(),
-    });
-    setItems(next);
-    setNewItem(initialForm);
-    setLogOpen(false);
-    toast.success('Found item logged');
+    try {
+      await lostFoundApi.create({
+        description: newItem.description.trim(),
+        category: newItem.category,
+        found_location: newItem.foundLocation.trim() || '—',
+        found_by: newItem.foundBy.trim() || 'Staff',
+        notes: newItem.notes.trim(),
+      });
+      setNewItem(initialForm);
+      setLogOpen(false);
+      toast.success('Found item logged');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleClaim = (e: React.FormEvent) => {
+  const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!claimTarget) return;
     const name = claimantName.trim();
@@ -115,28 +115,40 @@ export default function LostFoundContent() {
       toast.error('Claimant name is required');
       return;
     }
-    const next = claimItem(claimTarget.id, name);
-    setItems(next);
-    setClaimTarget(null);
-    setClaimantName('');
-    toast.success(`Item returned to ${name}`);
+    try {
+      await lostFoundApi.claim(claimTarget.id, name);
+      setClaimTarget(null);
+      setClaimantName('');
+      toast.success(`Item returned to ${name}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleDispose = (item: LostFoundItem) => {
-    const next = updateLostFound(item.id, { status: 'Disposed' as ItemStatus });
-    setItems(next);
-    toast.success('Item marked as disposed');
+  const handleDispose = async (item: LostFoundItem) => {
+    try {
+      await lostFoundApi.update(item.id, { status: 'Disposed' });
+      toast.success('Item marked as disposed');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleReopen = (item: LostFoundItem) => {
-    const next = updateLostFound(item.id, {
-      status: 'Unclaimed' as ItemStatus,
-      claimedBy: '',
-      claimedAt: '',
-    });
-    setItems(next);
-    toast.success('Item reopened as unclaimed');
+  const handleReopen = async (item: LostFoundItem) => {
+    try {
+      await lostFoundApi.update(item.id, { status: 'Unclaimed', claimedBy: '' });
+      toast.success('Item reopened as unclaimed');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">

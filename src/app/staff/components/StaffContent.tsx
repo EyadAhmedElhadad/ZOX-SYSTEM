@@ -14,8 +14,12 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { loadStaff, addStaff, updateStaff, deleteStaff } from '@/data/staff';
-import type { StaffMember, StaffRole, StaffShift, StaffStatus } from '@/data/staff';
+import { toastApiError, useAsyncData, staffApi } from '@/lib/api';
+import type { UiStaffMember } from '@/lib/api';
+
+type StaffRole = 'Receptionist' | 'Café Cashier' | 'Floor Supervisor' | 'Technician' | 'Manager';
+type StaffShift = 'Morning' | 'Midday' | 'Evening' | 'Night';
+type StaffStatus = 'Active' | 'On Leave' | 'Terminated';
 
 const roles: StaffRole[] = [
   'Receptionist',
@@ -52,11 +56,18 @@ const initialForm = {
 };
 
 export default function StaffContent() {
-  const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
+  const { data, loading, error, reload } = useAsyncData(() => staffApi.list(), []);
+  const staff = data ?? [];
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<StaffRole | 'All'>('All');
   const [addOpen, setAddOpen] = useState(false);
   const [newStaff, setNewStaff] = useState(initialForm);
+
+  if (loading) {
+    return (
+      <div className="glass-panel p-10 text-center text-muted-foreground">Loading...</div>
+    );
+  }
 
   const active = staff.filter((s) => s.status === 'Active').length;
   const onLeave = staff.filter((s) => s.status === 'On Leave').length;
@@ -72,40 +83,51 @@ export default function StaffContent() {
     return matchesSearch && matchesRole;
   });
 
-  const handleAddStaff = (e: React.FormEvent) => {
+  const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaff.name.trim() || !newStaff.email.trim() || !newStaff.phone.trim()) {
       toast.error('Name, email, and phone are required');
       return;
     }
-    const name = newStaff.name.trim();
-    const next = addStaff({
-      name,
-      role: newStaff.role,
-      email: newStaff.email.trim(),
-      phone: newStaff.phone.trim(),
-      shift: newStaff.shift,
-      status: 'Active',
-      hourlyRate: Number(newStaff.hourlyRate) || 0,
-      hireDate: newStaff.hireDate || new Date().toISOString().slice(0, 10),
-      emergencyContact: '—',
-    });
-    setStaff(next);
-    setNewStaff(initialForm);
-    setAddOpen(false);
-    toast.success(`${name} added to staff`);
+    try {
+      const name = newStaff.name.trim();
+      await staffApi.create({
+        name,
+        role: newStaff.role === 'Café Cashier' ? 'Cafe Cashier' : newStaff.role,
+        email: newStaff.email.trim(),
+        phone: newStaff.phone.trim(),
+        shift: newStaff.shift,
+        hourly_rate: Number(newStaff.hourlyRate) || 0,
+        hire_date: newStaff.hireDate || new Date().toISOString().slice(0, 10),
+        emergency_contact: '—',
+      });
+      setNewStaff(initialForm);
+      setAddOpen(false);
+      toast.success(`${name} added to staff`);
+      await reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleStatusChange = (id: string, status: StaffStatus) => {
-    const next = updateStaff(id, { status });
-    setStaff(next);
-    toast.success(`Status updated to ${status}`);
+  const handleStatusChange = async (id: string, status: StaffStatus) => {
+    try {
+      await staffApi.update(id, { status });
+      toast.success(`Status updated to ${status}`);
+      await reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleDelete = (member: StaffMember) => {
-    const next = deleteStaff(member.id);
-    setStaff(next);
-    toast.success(`${member.name} removed from staff`);
+  const handleDelete = async (member: UiStaffMember) => {
+    try {
+      await staffApi.remove(member.id);
+      toast.success(`${member.name} removed from staff`);
+      await reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
   return (
@@ -298,7 +320,7 @@ export default function StaffContent() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`status-badge ${roleBadgeStyles[member.role]}`}>
+                      <span className={`status-badge ${roleBadgeStyles[member.role as StaffRole]}`}>
                         {member.role}
                       </span>
                     </td>

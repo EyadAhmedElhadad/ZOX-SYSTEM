@@ -1,8 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import { Star, MessageSquare, TrendingUp, AlertTriangle, Check, X, Inbox } from 'lucide-react';
-import { loadFeedback, updateFeedbackStatus } from '@/data/feedback';
-import type { FeedbackEntry } from '@/data/feedback';
+import { toast } from 'sonner';
+import { feedbackApi, useAsyncData, toastApiError } from '@/lib/api';
+import type { UiFeedbackEntry } from '@/lib/api';
 
 type RatingFilter = 'all' | '5' | '4' | '3' | '2' | '1';
 
@@ -38,9 +39,14 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function FeedbackContent() {
-  const [entries, setEntries] = useState<FeedbackEntry[]>(() => loadFeedback());
+  const { data, loading, reload } = useAsyncData(() => feedbackApi.list(), []);
+  const entries = data ?? [];
   const [filter, setFilter] = useState<RatingFilter>('all');
   const [showReviewed, setShowReviewed] = useState(false);
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   const total = entries.length;
   const average = total ? entries.reduce((sum, e) => sum + e.rating, 0) / total : 0;
@@ -60,10 +66,15 @@ export default function FeedbackContent() {
     return true;
   });
 
-  const handleToggleReviewed = (entry: FeedbackEntry) => {
+  const handleToggleReviewed = async (entry: UiFeedbackEntry) => {
     const nextStatus = entry.status === 'new' ? 'reviewed' : 'new';
-    const next = updateFeedbackStatus(entry.id, nextStatus);
-    setEntries(next);
+    try {
+      await feedbackApi.setStatus(entry.id, nextStatus);
+      toast.success(`Marked as ${nextStatus}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
   return (

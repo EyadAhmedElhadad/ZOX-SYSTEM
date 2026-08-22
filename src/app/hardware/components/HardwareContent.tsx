@@ -17,8 +17,11 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { loadHardware, addHardware, updateHardware, deleteHardware } from '@/data/hardware';
-import type { HardwareItem, HardwareType, HardwareStatus } from '@/data/hardware';
+import { hardwareApi, useAsyncData, toastApiError, type UiHardwareItem } from '@/lib/api';
+
+type HardwareType = UiHardwareItem['type'];
+type HardwareStatus = UiHardwareItem['status'];
+type HardwareItem = UiHardwareItem;
 
 const typeFilters: (HardwareType | 'All')[] = [
   'All',
@@ -69,7 +72,8 @@ const initialForm = {
 };
 
 export default function HardwareContent() {
-  const [items, setItems] = useState<HardwareItem[]>(() => loadHardware());
+  const { data, loading, reload } = useAsyncData(() => hardwareApi.list(), []);
+  const items = data ?? [];
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<HardwareType | 'All'>('All');
   const [addOpen, setAddOpen] = useState(false);
@@ -89,43 +93,56 @@ export default function HardwareContent() {
   const inMaintenance = items.filter((i) => i.status === 'Maintenance').length;
   const available = items.filter((i) => i.status === 'Available').length;
 
-  const handleStatusChange = (id: string, status: HardwareStatus) => {
-    const next = updateHardware(id, { status });
-    setItems(next);
-    toast.success(`Asset marked as ${status}`);
+  const handleStatusChange = async (id: string, status: HardwareStatus) => {
+    try {
+      await hardwareApi.update(id, { status });
+      toast.success(`Asset marked as ${status}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleDelete = (item: HardwareItem) => {
+  const handleDelete = async (item: HardwareItem) => {
     if (!window.confirm(`Delete ${item.name} (${item.serial})?`)) return;
-    const next = deleteHardware(item.id);
-    setItems(next);
-    toast.success(`${item.name} deleted`);
+    try {
+      await hardwareApi.remove(item.id);
+      toast.success(`${item.name} deleted`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.name.trim()) {
       toast.error('Item name is required');
       return;
     }
-    const next = addHardware({
-      name: newItem.name.trim(),
-      type: newItem.type,
-      model: newItem.model.trim() || '—',
-      serial: newItem.serial.trim() || '—',
-      location: newItem.location.trim() || '—',
-      room: newItem.location.trim() || '—',
-      status: 'Available',
-      condition: newItem.condition,
-      purchaseDate: new Date().toISOString().slice(0, 10),
-      lastServiced: '—',
-      notes: '',
-    });
-    setItems(next);
-    setNewItem(initialForm);
-    setAddOpen(false);
-    toast.success(`${next[0].name} registered`);
+    try {
+      await hardwareApi.create({
+        name: newItem.name.trim(),
+        type: newItem.type,
+        model: newItem.model.trim() || '—',
+        serial: newItem.serial.trim() || '—',
+        location: newItem.location.trim() || '—',
+        condition: newItem.condition,
+        purchase_date: new Date().toISOString().slice(0, 10),
+        notes: '',
+      });
+      setNewItem(initialForm);
+      setAddOpen(false);
+      toast.success(`${newItem.name.trim()} registered`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">
@@ -295,7 +312,7 @@ export default function HardwareContent() {
                       <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                         {item.serial}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{item.room}</td>
+                       <td className="px-4 py-3 text-muted-foreground">{item.location}</td>
                       <td className={`px-4 py-3 font-semibold ${conditionStyles[item.condition]}`}>
                         {item.condition}
                       </td>

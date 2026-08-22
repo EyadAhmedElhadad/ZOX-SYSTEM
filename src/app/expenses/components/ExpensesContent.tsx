@@ -12,8 +12,20 @@ import {
   Inbox,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { loadExpenses, addExpense, deleteExpense, expenseCategories } from '@/data/expenses';
-import type { Expense } from '@/data/expenses';
+import { expensesApi, useAsyncData, toastApiError, type UiExpense } from '@/lib/api';
+
+type Expense = UiExpense;
+
+const expenseCategories = [
+  'Utilities',
+  'Inventory',
+  'Maintenance',
+  'Payroll',
+  'Supplies',
+  'Software',
+  'Marketing',
+  'Other',
+];
 
 type MonthFilter = 'all' | 'this' | 'last';
 
@@ -54,7 +66,8 @@ function lastMonth() {
 }
 
 export default function ExpensesContent() {
-  const [expenses, setExpenses] = useState<Expense[]>(() => loadExpenses());
+  const { data, loading, reload } = useAsyncData(() => expensesApi.list(), []);
+  const expenses = data ?? [];
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [monthFilter, setMonthFilter] = useState<MonthFilter>('all');
@@ -102,44 +115,56 @@ export default function ExpensesContent() {
     : 0;
   const filteredTotal = filtered.reduce((sum, e) => sum + e.amount, 0);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.title.trim() || !newExpense.amount) {
       toast.error('Title and amount are required');
       return;
     }
-    const next = addExpense({
-      title: newExpense.title.trim(),
-      category: newExpense.category,
-      amount: Number(newExpense.amount) || 0,
-      vendor: newExpense.vendor.trim() || '—',
-      date: newExpense.date || new Date().toISOString().slice(0, 10),
-      paymentMethod: newExpense.paymentMethod,
-      notes: newExpense.notes.trim(),
-      recurring: newExpense.recurring,
-    });
-    setExpenses(next);
-    setNewExpense({
-      title: '',
-      category: 'Utilities',
-      amount: '',
-      vendor: '',
-      date: '',
-      paymentMethod: 'Cash',
-      notes: '',
-      recurring: false,
-    });
-    setAddOpen(false);
-    toast.success('Expense recorded');
+    try {
+      await expensesApi.create({
+        title: newExpense.title.trim(),
+        category: newExpense.category,
+        amount: Number(newExpense.amount) || 0,
+        vendor: newExpense.vendor.trim() || '—',
+        expense_date: newExpense.date || new Date().toISOString().slice(0, 10),
+        payment_method: newExpense.paymentMethod,
+        notes: newExpense.notes.trim(),
+        recurring: newExpense.recurring,
+      });
+      setNewExpense({
+        title: '',
+        category: 'Utilities',
+        amount: '',
+        vendor: '',
+        date: '',
+        paymentMethod: 'Cash',
+        notes: '',
+        recurring: false,
+      });
+      setAddOpen(false);
+      toast.success('Expense recorded');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    const next = deleteExpense(deleteTarget.id);
-    setExpenses(next);
-    toast.success('Expense deleted');
-    setDeleteTarget(null);
+    try {
+      await expensesApi.remove(deleteTarget.id);
+      toast.success('Expense deleted');
+      setDeleteTarget(null);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">

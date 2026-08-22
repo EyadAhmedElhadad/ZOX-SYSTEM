@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Building2, DoorOpen, CircleDot, Wrench, Gamepad2, Users, Plus, X } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { loadRooms, updateRoom, addRoom } from '@/data/rooms';
-import type { Room } from '@/data/rooms';
+import { roomsApi, useAsyncData, toastApiError, type UiRoom } from '@/lib/api';
+
+type Room = UiRoom & { customer?: string };
 
 type RoomStatus = Room['status'];
 
@@ -45,7 +46,8 @@ const initialForm = {
 };
 
 export default function RoomsContent() {
-  const [rooms, setRooms] = useState<Room[]>(() => loadRooms());
+  const { data, loading, reload } = useAsyncData(() => roomsApi.list(), []);
+  const rooms = (data ?? []) as Room[];
   const [statusFilter, setStatusFilter] = useState<RoomStatus | 'All'>('All');
   const [addOpen, setAddOpen] = useState(false);
   const [newRoom, setNewRoom] = useState(initialForm);
@@ -57,31 +59,39 @@ export default function RoomsContent() {
   const occupied = rooms.filter((r) => r.status === 'Occupied').length;
   const maintenance = rooms.filter((r) => r.status === 'Maintenance').length;
 
-  const handleStatusChange = (id: string, status: RoomStatus) => {
-    const next = updateRoom(id, { status });
-    setRooms(next);
-    toast.success(`Room marked as ${status}`);
+  const handleStatusChange = async (id: string, status: RoomStatus) => {
+    try {
+      await roomsApi.update(id, { status });
+      toast.success(`Room marked as ${status}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleAddRoom = (e: React.FormEvent) => {
+  const handleAddRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoom.name.trim()) {
       toast.error('Room name is required');
       return;
     }
-    const next = addRoom({
-      name: newRoom.name.trim(),
-      roomType: newRoom.roomType,
-      status: 'Available',
-      capacity: Math.max(1, Number(newRoom.capacity) || 1),
-      controllers: Math.max(0, Number(newRoom.controllers) || 0),
-      hourlyRate: Math.max(0, Number(newRoom.hourlyRate) || 0),
-      psModel: newRoom.psModel.trim() || 'PS5',
-    });
-    setRooms(next);
-    setNewRoom(initialForm);
-    setAddOpen(false);
-    toast.success('Room added');
+    try {
+      await roomsApi.create({
+        name: newRoom.name.trim(),
+        room_type: newRoom.roomType,
+        status: 'Available',
+        capacity: Math.max(1, Number(newRoom.capacity) || 1),
+        controllers: Math.max(0, Number(newRoom.controllers) || 0),
+        hourly_rate: Math.max(0, Number(newRoom.hourlyRate) || 0),
+        ps_model: newRoom.psModel.trim() || 'PS5',
+      });
+      setNewRoom(initialForm);
+      setAddOpen(false);
+      toast.success('Room added');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
   return (
@@ -153,6 +163,10 @@ export default function RoomsContent() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>
+      ) : (
+      <>
       {/* Filter tabs */}
       <div className="flex flex-wrap gap-1.5">
         {statusTabs.map((tab) => {
@@ -249,6 +263,8 @@ export default function RoomsContent() {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
 
       {/* Add Room Modal */}

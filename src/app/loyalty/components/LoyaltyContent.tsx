@@ -13,33 +13,42 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { loadMembers, loadRewards, addMember, adjustPoints, updateReward } from '@/data/loyalty';
-import type { LoyaltyMember, Reward } from '@/data/loyalty';
+import { loyaltyApi, rewardsApi, customersApi, useAsyncData, toastApiError } from '@/lib/api';
+import type { UiLoyaltyMember, UiReward } from '@/lib/api';
 
-const tiers: LoyaltyMember['tier'][] = ['Bronze', 'Silver', 'Gold', 'VIP'];
+const tiers: UiLoyaltyMember['tier'][] = ['Bronze', 'Silver', 'Gold', 'VIP'];
 
-const tierStyles: Record<LoyaltyMember['tier'], string> = {
+const tierStyles: Record<UiLoyaltyMember['tier'], string> = {
   Bronze: 'bg-muted text-muted-foreground border border-border',
   Silver: 'bg-info/10 text-info border border-info/20',
   Gold: 'bg-warning/10 text-warning border border-warning/20',
   VIP: 'bg-primary/10 text-primary border border-primary/20',
 };
 
-const statusStyles: Record<LoyaltyMember['status'], string> = {
+const statusStyles: Record<UiLoyaltyMember['status'], string> = {
   Active: 'bg-accent/10 text-accent border border-accent/20',
   Inactive: 'bg-muted text-muted-foreground border border-border',
 };
 
 export default function LoyaltyContent() {
-  const [members, setMembers] = useState<LoyaltyMember[]>(() => loadMembers());
-  const [rewards, setRewards] = useState<Reward[]>(() => loadRewards());
+  const { data: memberData, loading, reload: reloadMembers } = useAsyncData(
+    () => loyaltyApi.listMembers(),
+    []
+  );
+  const { data: rewardData, reload: reloadRewards } = useAsyncData(() => rewardsApi.list(), []);
+  const members = memberData ?? [];
+  const rewards = rewardData ?? [];
+  const reload = () => {
+    reloadMembers();
+    reloadRewards();
+  };
   const [search, setSearch] = useState('');
-  const [tierFilter, setTierFilter] = useState<LoyaltyMember['tier'] | 'All'>('All');
+  const [tierFilter, setTierFilter] = useState<UiLoyaltyMember['tier'] | 'All'>('All');
   const [addOpen, setAddOpen] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', phone: '' });
-  const [adjustTarget, setAdjustTarget] = useState<LoyaltyMember | null>(null);
+  const [adjustTarget, setAdjustTarget] = useState<UiLoyaltyMember | null>(null);
   const [adjustDelta, setAdjustDelta] = useState('');
-  const [redeemTarget, setRedeemTarget] = useState<Reward | null>(null);
+  const [redeemTarget, setRedeemTarget] = useState<UiReward | null>(null);
   const [redeemMemberId, setRedeemMemberId] = useState('');
   const [redeemed, setRedeemed] = useState<number>(() => {
     try {
@@ -49,6 +58,10 @@ export default function LoyaltyContent() {
       return 0;
     }
   });
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   const active = members.filter((m) => m.status === 'Active').length;
   const totalPoints = members.reduce((sum, m) => sum + m.points, 0);
@@ -63,29 +76,37 @@ export default function LoyaltyContent() {
     return matchesSearch && matchesTier;
   });
 
-  const handleAddMember = (e: React.FormEvent) => {
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMember.name.trim() || !newMember.phone.trim()) {
       toast.error('Name and phone are required');
       return;
     }
-    const next = addMember({
-      name: newMember.name.trim(),
-      phone: newMember.phone.trim(),
-    });
-    setMembers(next);
-    setNewMember({ name: '', phone: '' });
-    setAddOpen(false);
-    toast.success(`${newMember.name} added to loyalty program`);
+    try {
+      await customersApi.create({
+        name: newMember.name.trim(),
+        phone: newMember.phone.trim(),
+      });
+      setNewMember({ name: '', phone: '' });
+      setAddOpen(false);
+      toast.success(`${newMember.name} added to loyalty program`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleQuickAdjust = (id: string, delta: number) => {
-    const next = adjustPoints(id, delta);
-    setMembers(next);
-    toast.success(`${delta > 0 ? '+' : ''}${delta} points`);
+  const handleQuickAdjust = async (id: string, delta: number) => {
+    try {
+      await loyaltyApi.adjustPoints(id, delta);
+      toast.success(`${delta > 0 ? '+' : ''}${delta} points`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleAdjustSubmit = (e: React.FormEvent) => {
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustTarget) return;
     const delta = Number(adjustDelta);
@@ -93,20 +114,28 @@ export default function LoyaltyContent() {
       toast.error('Enter a point amount');
       return;
     }
-    const next = adjustPoints(adjustTarget.id, delta);
-    setMembers(next);
-    toast.success(`${delta > 0 ? '+' : ''}${delta} points for ${adjustTarget.name}`);
-    setAdjustTarget(null);
-    setAdjustDelta('');
+    try {
+      await loyaltyApi.adjustPoints(adjustTarget.id, delta);
+      toast.success(`${delta > 0 ? '+' : ''}${delta} points for ${adjustTarget.name}`);
+      setAdjustTarget(null);
+      setAdjustDelta('');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleToggleReward = (reward: Reward) => {
-    const next = updateReward(reward.id, { enabled: !reward.enabled });
-    setRewards(next);
-    toast.success(`${reward.name} ${reward.enabled ? 'disabled' : 'enabled'}`);
+  const handleToggleReward = async (reward: UiReward) => {
+    try {
+      await rewardsApi.update(reward.id, { enabled: !reward.enabled });
+      toast.success(`${reward.name} ${reward.enabled ? 'disabled' : 'enabled'}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleRedeem = (e: React.FormEvent) => {
+  const handleRedeem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!redeemTarget) return;
     if (!redeemMemberId) {
@@ -119,18 +148,22 @@ export default function LoyaltyContent() {
       toast.error(`${member.name} does not have enough points`);
       return;
     }
-    const next = adjustPoints(member.id, -redeemTarget.cost);
-    setMembers(next);
-    const value = redeemed + redeemTarget.cost;
-    setRedeemed(value);
     try {
-      localStorage.setItem('zoox-loyalty-redeemed', String(value));
-    } catch {
-      /* ignore */
+      await loyaltyApi.adjustPoints(member.id, -redeemTarget.cost);
+      const value = redeemed + redeemTarget.cost;
+      setRedeemed(value);
+      try {
+        localStorage.setItem('zoox-loyalty-redeemed', String(value));
+      } catch {
+        /* ignore */
+      }
+      toast.success(`Reward redeemed for ${member.name}`);
+      setRedeemTarget(null);
+      setRedeemMemberId('');
+      reload();
+    } catch (err) {
+      toastApiError(err);
     }
-    toast.success(`Reward redeemed for ${member.name}`);
-    setRedeemTarget(null);
-    setRedeemMemberId('');
   };
 
   return (

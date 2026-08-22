@@ -11,6 +11,8 @@ import {
   RefreshCw,
   CalendarDays,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastApiError, useAsyncData, staffApi, attendanceApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 type AttendanceStatus = 'On Time' | 'Late' | 'Absent' | 'Off Duty';
@@ -28,116 +30,12 @@ interface StaffShift {
   minutesLate: number;
 }
 
-const initialStaff: StaffShift[] = [
-  {
-    id: 'st-001',
-    name: 'Karim Adel',
-    role: 'Receptionist',
-    shiftLabel: 'Morning',
-    shiftStart: '09:00',
-    shiftEnd: '17:00',
-    status: 'On Time',
-    location: 'Front Desk',
-    checkIn: '08:52',
-    minutesLate: 0,
-  },
-  {
-    id: 'st-002',
-    name: 'Sara Mahmoud',
-    role: 'Café Cashier',
-    shiftLabel: 'Morning',
-    shiftStart: '09:00',
-    shiftEnd: '17:00',
-    status: 'On Time',
-    location: 'Café Counter',
-    checkIn: '08:58',
-    minutesLate: 0,
-  },
-  {
-    id: 'st-003',
-    name: 'Tarek Nabil',
-    role: 'Floor Supervisor',
-    shiftLabel: 'Midday',
-    shiftStart: '12:00',
-    shiftEnd: '20:00',
-    status: 'On Time',
-    location: 'Gaming Floor',
-    checkIn: '11:55',
-    minutesLate: 0,
-  },
-  {
-    id: 'st-004',
-    name: 'Nour Hassan',
-    role: 'Technician',
-    shiftLabel: 'Midday',
-    shiftStart: '12:00',
-    shiftEnd: '20:00',
-    status: 'Late',
-    location: 'Tech Room',
-    checkIn: '12:18',
-    minutesLate: 18,
-  },
-  {
-    id: 'st-005',
-    name: 'Youssef Adel',
-    role: 'Receptionist',
-    shiftLabel: 'Evening',
-    shiftStart: '16:00',
-    shiftEnd: '00:00',
-    status: 'Late',
-    location: 'Front Desk',
-    checkIn: '16:27',
-    minutesLate: 27,
-  },
-  {
-    id: 'st-006',
-    name: 'Mona Ibrahim',
-    role: 'Café Cashier',
-    shiftLabel: 'Evening',
-    shiftStart: '16:00',
-    shiftEnd: '00:00',
-    status: 'On Time',
-    location: 'Café Counter',
-    checkIn: '15:53',
-    minutesLate: 0,
-  },
-  {
-    id: 'st-007',
-    name: 'Hassan Samir',
-    role: 'Floor Supervisor',
-    shiftLabel: 'Evening',
-    shiftStart: '16:00',
-    shiftEnd: '00:00',
-    status: 'Absent',
-    location: '—',
-    checkIn: null,
-    minutesLate: 0,
-  },
-  {
-    id: 'st-008',
-    name: 'Dina Khaled',
-    role: 'Technician',
-    shiftLabel: 'Night',
-    shiftStart: '20:00',
-    shiftEnd: '04:00',
-    status: 'Off Duty',
-    location: 'Tech Room',
-    checkIn: null,
-    minutesLate: 0,
-  },
-  {
-    id: 'st-009',
-    name: 'Ramy Fathy',
-    role: 'Receptionist',
-    shiftLabel: 'Night',
-    shiftStart: '20:00',
-    shiftEnd: '04:00',
-    status: 'Off Duty',
-    location: 'Front Desk',
-    checkIn: null,
-    minutesLate: 0,
-  },
-];
+const SHIFT_TIMES: Record<string, [string, string]> = {
+  Morning: ['09:00', '17:00'],
+  Midday: ['12:00', '20:00'],
+  Evening: ['16:00', '00:00'],
+  Night: ['20:00', '04:00'],
+};
 
 const statusStyles: Record<AttendanceStatus, string> = {
   'On Time': 'bg-accent/10 text-accent border border-accent/20',
@@ -157,9 +55,10 @@ interface ShiftRowProps {
   staff: StaffShift;
   isOpen: boolean;
   onToggle: () => void;
+  onCheckIn: () => void;
 }
 
-function ShiftRow({ staff, isOpen, onToggle }: ShiftRowProps) {
+function ShiftRow({ staff, isOpen, onToggle, onCheckIn }: ShiftRowProps) {
   return (
     <div className="border border-border rounded-xl bg-muted/20 overflow-hidden">
       <button
@@ -224,6 +123,16 @@ function ShiftRow({ staff, isOpen, onToggle }: ShiftRowProps) {
               {staff.status === 'Late' ? `${staff.minutesLate} min late` : staff.status}
             </p>
           </div>
+          <div className="flex items-end">
+            <button
+              onClick={onCheckIn}
+              disabled={staff.status === 'Off Duty'}
+              className="btn-primary h-9 px-3 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <UserCheck size={14} />
+              Check In
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -236,6 +145,33 @@ export default function StaffAttendanceContent() {
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  const { data, loading, error, reload } = useAsyncData<StaffShift[]>(async () => {
+    const [staff, roster] = await Promise.all([
+      staffApi.list(),
+      attendanceApi.todayRoster(),
+    ]);
+    const byId = new Map(roster.map((r) => [r.staffId, r]));
+    return staff
+      .filter((s) => s.status === 'Active')
+      .map((s) => {
+        const rec = byId.get(s.id);
+        const [start, end] = SHIFT_TIMES[s.shift] ?? ['', ''];
+        return {
+          id: s.id,
+          name: s.name,
+          role: s.role,
+          shiftLabel: s.shift,
+          shiftStart: rec?.shiftStart || start,
+          shiftEnd: rec?.shiftEnd || end,
+          status: rec?.status ?? 'Off Duty',
+          location: rec?.location || '—',
+          checkIn: rec?.checkIn ?? null,
+          minutesLate: rec?.minutesLate ?? 0,
+        } as StaffShift;
+      });
+  }, []);
+  const list = data ?? [];
 
   useEffect(() => {
     if (ready && user && user.role !== 'owner' && user.role !== 'manager') {
@@ -271,10 +207,26 @@ export default function StaffAttendanceContent() {
   if (!ready || !user) return null;
   if (user.role !== 'owner' && user.role !== 'manager') return null;
 
-  const onTime = initialStaff.filter((s) => s.status === 'On Time').length;
-  const late = initialStaff.filter((s) => s.status === 'Late').length;
-  const absent = initialStaff.filter((s) => s.status === 'Absent').length;
-  const present = initialStaff.filter((s) => s.status !== 'Off Duty').length;
+  if (loading) {
+    return (
+      <div className="glass-panel p-10 text-center text-muted-foreground">Loading...</div>
+    );
+  }
+
+  const handleCheckIn = async (staffId: string) => {
+    try {
+      const status = await attendanceApi.checkIn(staffId);
+      toast.success(`Checked in (${status})`);
+      await reload();
+    } catch (err) {
+      toastApiError(err);
+    }
+  };
+
+  const onTime = list.filter((s) => s.status === 'On Time').length;
+  const late = list.filter((s) => s.status === 'Late').length;
+  const absent = list.filter((s) => s.status === 'Absent').length;
+  const present = list.filter((s) => s.status !== 'Off Duty').length;
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">
@@ -367,12 +319,13 @@ export default function StaffAttendanceContent() {
 
       {/* Staff list */}
       <div className="space-y-2">
-        {initialStaff.map((staff) => (
+        {list.map((staff) => (
           <ShiftRow
             key={staff.id}
             staff={staff}
             isOpen={expanded === staff.id}
             onToggle={() => setExpanded(expanded === staff.id ? null : staff.id)}
+            onCheckIn={() => handleCheckIn(staff.id)}
           />
         ))}
       </div>

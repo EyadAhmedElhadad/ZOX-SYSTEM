@@ -16,8 +16,9 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadMaintenance, addMaintenance, updateMaintenance } from '@/data/maintenance';
-import type { MaintenanceTask } from '@/data/maintenance';
+import { maintenanceApi, useAsyncData, toastApiError, type UiMaintenanceTask } from '@/lib/api';
+
+type MaintenanceTask = UiMaintenanceTask;
 
 type StatusFilter = 'All' | MaintenanceTask['status'];
 
@@ -47,7 +48,8 @@ const initialForm = {
 
 export default function MaintenanceContent() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<MaintenanceTask[]>(() => loadMaintenance());
+  const { data, loading, reload } = useAsyncData(() => maintenanceApi.list(), []);
+  const tasks = data ?? [];
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [addOpen, setAddOpen] = useState(false);
   const [newTask, setNewTask] = useState(initialForm);
@@ -59,33 +61,42 @@ export default function MaintenanceContent() {
   const done = tasks.filter((t) => t.status === 'Done').length;
   const urgent = tasks.filter((t) => t.priority === 'Urgent' && t.status !== 'Done').length;
 
-  const handleStatusAction = (task: MaintenanceTask, status: MaintenanceTask['status']) => {
-    const patch: Partial<MaintenanceTask> = { status };
-    if (status === 'Open') patch.completedAt = undefined;
-    const next = updateMaintenance(task.id, patch);
-    setTasks(next);
-    toast.success(`Task marked as ${status}`);
+  const handleStatusAction = async (task: MaintenanceTask, status: MaintenanceTask['status']) => {
+    try {
+      await maintenanceApi.update(task.id, { status });
+      toast.success(`Task marked as ${status}`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.title.trim()) {
       toast.error('Work order title is required');
       return;
     }
-    const next = addMaintenance({
-      title: newTask.title.trim(),
-      location: newTask.location.trim() || '—',
-      priority: newTask.priority,
-      assignedTo: newTask.assignedTo.trim() || 'Unassigned',
-      reportedBy: user?.name ?? 'Staff',
-      description: newTask.description.trim(),
-    });
-    setTasks(next);
-    setNewTask(initialForm);
-    setAddOpen(false);
-    toast.success('Work order created');
+    try {
+      await maintenanceApi.create({
+        title: newTask.title.trim(),
+        location: newTask.location.trim() || '—',
+        priority: newTask.priority,
+        description: newTask.description.trim(),
+        assigned_to: null,
+      });
+      setNewTask(initialForm);
+      setAddOpen(false);
+      toast.success('Work order created');
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
+
+  if (loading) {
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>;
+  }
 
   return (
     <div className="p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">

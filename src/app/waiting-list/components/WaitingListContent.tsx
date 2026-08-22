@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { Bell, Check, CheckCheck, Clock, ListPlus, Timer, UserPlus, Users, X } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import {
-  addWaiting,
-  loadWaiting,
-  notifyWaiting,
-  removeWaiting,
-  updateWaiting,
-} from '@/data/waiting';
-import type { WaitingEntry } from '@/data/waiting';
+  waitingApi,
+  useAsyncData,
+  toastApiError,
+  type UiWaitingEntry,
+} from '@/lib/api';
+
+type WaitingEntry = UiWaitingEntry;
 
 const statusStyles: Record<WaitingEntry['status'], string> = {
   Waiting: 'bg-warning/10 text-warning border border-warning/20',
@@ -62,7 +62,8 @@ function initials(name: string): string {
 }
 
 export default function WaitingListContent() {
-  const [entries, setEntries] = useState<WaitingEntry[]>(() => loadWaiting());
+  const { data, loading, reload } = useAsyncData(() => waitingApi.list(), []);
+  const entries = (data ?? []) as WaitingEntry[];
   const [now, setNow] = useState<Date>(() => new Date());
   const [addOpen, setAddOpen] = useState(false);
   const [newEntry, setNewEntry] = useState({
@@ -94,41 +95,57 @@ export default function WaitingListContent() {
     );
   }).length;
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEntry.name.trim()) {
       toast.error('Name is required');
       return;
     }
-    const next = addWaiting({
-      name: newEntry.name.trim(),
-      partySize: Math.max(1, Number(newEntry.partySize) || 1),
-      roomPreference: newEntry.roomPreference,
-      game: newEntry.game.trim() || undefined,
-      phone: newEntry.phone.trim() || undefined,
-    });
-    setEntries(next);
-    setNewEntry({ name: '', partySize: 2, roomPreference: 'Any', game: '', phone: '' });
-    setAddOpen(false);
-    toast.success(`${newEntry.name.trim()} added to the queue`);
+    try {
+      await waitingApi.create({
+        name: newEntry.name.trim(),
+        party_size: Math.max(1, Number(newEntry.partySize) || 1),
+        room_preference: newEntry.roomPreference,
+        game: newEntry.game.trim() || undefined,
+        phone: newEntry.phone.trim() || undefined,
+      });
+      setNewEntry({ name: '', partySize: 2, roomPreference: 'Any', game: '', phone: '' });
+      setAddOpen(false);
+      toast.success(`${newEntry.name.trim()} added to the queue`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleNotify = (entry: WaitingEntry) => {
-    const next = notifyWaiting(entry.id);
-    setEntries(next);
-    toast.success(`${entry.name} notified`);
+  const handleNotify = async (entry: WaitingEntry) => {
+    try {
+      await waitingApi.notify(entry.id);
+      toast.success(`${entry.name} notified`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleSeat = (entry: WaitingEntry) => {
-    const next = updateWaiting(entry.id, { status: 'Seated' });
-    setEntries(next);
-    toast.success(`${entry.name} seated`);
+  const handleSeat = async (entry: WaitingEntry) => {
+    try {
+      await waitingApi.seat(entry.id, null);
+      toast.success(`${entry.name} seated`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
-  const handleRemove = (entry: WaitingEntry) => {
-    const next = removeWaiting(entry.id);
-    setEntries(next);
-    toast.info(`${entry.name} removed from the queue`);
+  const handleRemove = async (entry: WaitingEntry) => {
+    try {
+      await waitingApi.cancel(entry.id);
+      toast.info(`${entry.name} removed from the queue`);
+      reload();
+    } catch (err) {
+      toastApiError(err);
+    }
   };
 
   const active = waitingNow + notified;
@@ -204,6 +221,10 @@ export default function WaitingListContent() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>
+      ) : (
+      <>
       {/* Queue */}
       {queue.length === 0 ? (
         <div className="card-base flex flex-col items-center justify-center text-center gap-3 py-16">
@@ -293,7 +314,8 @@ export default function WaitingListContent() {
           })}
         </div>
       )}
-
+      </>
+      )}
       {/* Add to Queue Modal */}
       {addOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
