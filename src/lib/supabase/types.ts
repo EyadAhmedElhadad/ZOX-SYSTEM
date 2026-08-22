@@ -5,8 +5,7 @@ export type UserRole = 'owner' | 'manager' | 'staff' | 'customer';
 export type RoomType = 'Standard' | 'Premium' | 'VIP';
 export type RoomStatus = 'Available' | 'Occupied' | 'Reserved' | 'Maintenance';
 export type ReservationStatus =
-  | 'Reserved' | 'Arrived' | 'Active' | 'Completed'
-  | 'Cancelled' | 'No Show' | 'Waiting' | 'Late';
+  'Reserved' | 'Arrived' | 'Active' | 'Completed' | 'Cancelled' | 'No Show' | 'Waiting' | 'Late';
 export type SessionStatus = 'active' | 'paused' | 'completed' | 'cancelled';
 export type SessionKind = 'open' | 'fixed';
 export type ZoneCategory = 'playstation' | 'billiards' | 'cafe';
@@ -21,7 +20,8 @@ export type FeedbackStatus = 'new' | 'reviewed';
 export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold' | 'VIP';
 export type MaintPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 export type TaskStatus = 'Open' | 'In Progress' | 'Done' | 'Cancelled';
-export type StaffTitle = 'Receptionist' | 'Cafe Cashier' | 'Floor Supervisor' | 'Technician' | 'Manager';
+export type StaffTitle =
+  'Receptionist' | 'Cafe Cashier' | 'Floor Supervisor' | 'Technician' | 'Manager';
 export type ShiftName = 'Morning' | 'Midday' | 'Evening' | 'Night';
 export type StaffState = 'Active' | 'On Leave' | 'Terminated';
 export type WaitingStatus = 'Waiting' | 'Notified' | 'Seated' | 'Cancelled';
@@ -353,24 +353,68 @@ export interface Database {
       profiles: { Row: Profile; Insert: Partial<Profile>; Update: Partial<Profile> };
       customers: { Row: CustomerRow; Insert: Partial<CustomerRow>; Update: Partial<CustomerRow> };
       rooms: { Row: RoomRow; Insert: Partial<RoomRow>; Update: Partial<RoomRow> };
-      catalog_products: { Row: CatalogProductRow; Insert: Partial<CatalogProductRow>; Update: Partial<CatalogProductRow> };
-      inventory_items: { Row: InventoryItemRow; Insert: Partial<InventoryItemRow>; Update: Partial<InventoryItemRow> };
-      inventory_movements: { Row: TableRow & { item_id: string; delta: number; reason: string; actor_id: string | null }; Insert: Record<string, never>; Update: Record<string, never> };
-      reservations: { Row: ReservationRow; Insert: Partial<ReservationRow>; Update: Partial<ReservationRow> };
-      live_sessions: { Row: LiveSessionRow; Insert: Partial<LiveSessionRow>; Update: Partial<LiveSessionRow> };
-      session_products: { Row: SessionProductRow; Insert: Partial<SessionProductRow>; Update: Partial<SessionProductRow> };
+      catalog_products: {
+        Row: CatalogProductRow;
+        Insert: Partial<CatalogProductRow>;
+        Update: Partial<CatalogProductRow>;
+      };
+      inventory_items: {
+        Row: InventoryItemRow;
+        Insert: Partial<InventoryItemRow>;
+        Update: Partial<InventoryItemRow>;
+      };
+      inventory_movements: {
+        Row: TableRow & { item_id: string; delta: number; reason: string; actor_id: string | null };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+      };
+      reservations: {
+        Row: ReservationRow;
+        Insert: Partial<ReservationRow>;
+        Update: Partial<ReservationRow>;
+      };
+      live_sessions: {
+        Row: LiveSessionRow;
+        Insert: Partial<LiveSessionRow>;
+        Update: Partial<LiveSessionRow>;
+      };
+      session_products: {
+        Row: SessionProductRow;
+        Insert: Partial<SessionProductRow>;
+        Update: Partial<SessionProductRow>;
+      };
       hardware: { Row: HardwareRow; Insert: Partial<HardwareRow>; Update: Partial<HardwareRow> };
       sales: { Row: SaleRow; Insert: Partial<SaleRow>; Update: Partial<SaleRow> };
       sale_items: { Row: SaleItemRow; Insert: Partial<SaleItemRow>; Update: Partial<SaleItemRow> };
       expenses: { Row: ExpenseRow; Insert: Partial<ExpenseRow>; Update: Partial<ExpenseRow> };
       staff: { Row: StaffRow; Insert: Partial<StaffRow>; Update: Partial<StaffRow> };
-      attendance: { Row: AttendanceRow; Insert: Partial<AttendanceRow>; Update: Partial<AttendanceRow> };
-      waiting_list: { Row: WaitingListRow; Insert: Partial<WaitingListRow>; Update: Partial<WaitingListRow> };
-      maintenance_tasks: { Row: MaintenanceTaskRow; Insert: Partial<MaintenanceTaskRow>; Update: Partial<MaintenanceTaskRow> };
-      lost_found: { Row: LostFoundRow; Insert: Partial<LostFoundRow>; Update: Partial<LostFoundRow> };
+      attendance: {
+        Row: AttendanceRow;
+        Insert: Partial<AttendanceRow>;
+        Update: Partial<AttendanceRow>;
+      };
+      waiting_list: {
+        Row: WaitingListRow;
+        Insert: Partial<WaitingListRow>;
+        Update: Partial<WaitingListRow>;
+      };
+      maintenance_tasks: {
+        Row: MaintenanceTaskRow;
+        Insert: Partial<MaintenanceTaskRow>;
+        Update: Partial<MaintenanceTaskRow>;
+      };
+      lost_found: {
+        Row: LostFoundRow;
+        Insert: Partial<LostFoundRow>;
+        Update: Partial<LostFoundRow>;
+      };
       feedback: { Row: FeedbackRow; Insert: Partial<FeedbackRow>; Update: Partial<FeedbackRow> };
       rewards: { Row: RewardRow; Insert: Partial<RewardRow>; Update: Partial<RewardRow> };
-      loyalty_transactions: { Row: LoyaltyTransactionRow; Insert: Partial<LoyaltyTransactionRow>; Update: Partial<LoyaltyTransactionRow> };
+      loyalty_transactions: {
+        Row: LoyaltyTransactionRow;
+        Insert: Partial<LoyaltyTransactionRow>;
+        Update: Partial<LoyaltyTransactionRow>;
+      };
       audit_logs: { Row: AuditLogRow; Insert: Partial<AuditLogRow>; Update: Partial<AuditLogRow> };
       settings: { Row: SettingsRow; Insert: Partial<SettingsRow>; Update: Partial<SettingsRow> };
     };
@@ -380,7 +424,52 @@ export interface Database {
       occupancy_daily: { Row: OccupancyDailyView };
       top_customers_view: { Row: TopCustomerView };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      start_session: {
+        Args: {
+          p_room_id: string;
+          p_guest_name?: string;
+          p_phone?: string;
+          p_game?: string;
+          p_players?: number;
+          p_session_kind?: 'open' | 'fixed';
+          p_fixed_duration_minutes?: number | null;
+          p_customer_id?: string | null;
+          p_reservation_id?: string | null;
+          p_controller_ids?: string[];
+        };
+        Returns: string;
+      };
+      pause_session: { Args: { p_session_id: string }; Returns: undefined };
+      resume_session: { Args: { p_session_id: string }; Returns: undefined };
+      extend_session: {
+        Args: { p_session_id: string; p_minutes: number };
+        Returns: undefined;
+      };
+      add_session_product: {
+        Args: {
+          p_session_id: string;
+          p_product_id?: string | null;
+          p_name?: string | null;
+          p_price?: number | null;
+          p_qty?: number;
+        };
+        Returns: undefined;
+      };
+      end_session: {
+        Args: { p_session_id: string; p_payment_method?: 'Cash' | 'Card' | 'Wallet' | 'Transfer' };
+        Returns: string;
+      };
+      adjust_inventory: {
+        Args: { p_item_id: string; p_delta: number; p_reason?: string };
+        Returns: number;
+      };
+      adjust_loyalty_points: {
+        Args: { p_customer_id: string; p_delta: number; p_reason?: string };
+        Returns: number;
+      };
+      check_in: { Args: { p_staff_id: string }; Returns: string };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

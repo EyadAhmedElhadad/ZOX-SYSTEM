@@ -56,7 +56,9 @@ export async function middleware(request: NextRequest) {
   });
 
   // IMPORTANT: do not run code between createServerClient and getUser().
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_ROUTES.includes(path);
@@ -96,5 +98,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|manifest.webmanifest|sw.js|images|.*\\.png$).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icons|manifest.webmanifest|sw.js|images|.*\\.png$).*)',
+  ],
 };

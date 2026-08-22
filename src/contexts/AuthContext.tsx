@@ -47,7 +47,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function toZooxUser(user: User, profile?: { full_name: string; phone: string; role: UserRole } | null): ZooxUser {
+function toZooxUser(
+  user: User,
+  profile?: { full_name: string; phone: string; role: UserRole } | null
+): ZooxUser {
   const role = (profile?.role ?? 'customer') as UserRole;
   return {
     id: user.id,

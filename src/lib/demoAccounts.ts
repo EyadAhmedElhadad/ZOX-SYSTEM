@@ -57,9 +57,4 @@ export const roleBadgeColors: Record<UserRole, string> = {
   customer: 'text-primary',
 };
 
-export {
-  canAccessRoute,
-  homePathForRole,
-  loginPath,
-  initialsFor,
-} from '@/lib/auth-guards';
+export { canAccessRoute, homePathForRole, loginPath, initialsFor } from '@/lib/auth-guards';

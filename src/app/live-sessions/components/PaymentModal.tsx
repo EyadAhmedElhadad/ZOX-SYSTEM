@@ -32,10 +32,16 @@ const paymentMethods: {
   },
 ];
 
+interface CompletedSaleInfo {
+  invoiceNumber: string;
+  total: number;
+}
+
 interface PaymentModalProps {
   session: LiveSession;
   elapsedMin: number;
   onClose: () => void;
+  onConfirmPayment: (sessionId: string, method: PaymentMethod) => Promise<CompletedSaleInfo>;
   onPaymentComplete: (sessionId: string) => void;
 }
 
@@ -50,6 +56,7 @@ export default function PaymentModal({
   session,
   elapsedMin: initialElapsedMin,
   onClose,
+  onConfirmPayment,
   onPaymentComplete,
 }: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('cash');
@@ -77,13 +84,21 @@ export default function PaymentModal({
 
   const handleConfirmPayment = async () => {
     setIsProcessing(true);
-    // Backend integration point: POST /api/sessions/:id/payment with { method, amount, sessionId }
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success(
-      `Payment of ${total.toLocaleString()} EGP received via ${paymentMethods.find((m) => m.id === selectedMethod)?.label}`
-    );
-    setIsProcessing(false);
-    onPaymentComplete(session.id);
+    try {
+      // Server-authoritative checkout: end_session RPC computes the final bill,
+      // creates the sale, frees the room and updates loyalty — even if this
+      // tab was closed and reopened.
+      const sale = await onConfirmPayment(session.id, selectedMethod);
+      toast.success(
+        `Invoice ${sale.invoiceNumber} · ${sale.total.toLocaleString()} EGP via ${
+          paymentMethods.find((m) => m.id === selectedMethod)?.label
+        }`
+      );
+      onPaymentComplete(session.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Payment failed — session still open');
+      setIsProcessing(false);
+    }
   };
 
   return (

@@ -31,7 +31,12 @@ export interface QuickActionResponse {
 
 interface QuickActionModalProps {
   target: QuickActionTarget;
-  apiPath: string;
+  apiPath?: string;
+  applyAction?: (args: {
+    productId: string;
+    quantity: number;
+    extendMinutes: number;
+  }) => Promise<QuickActionResponse>;
   onClose: () => void;
   onApply: (updated: QuickActionTarget, result: QuickActionResponse) => void;
 }
@@ -39,6 +44,7 @@ interface QuickActionModalProps {
 export default function QuickActionModal({
   target,
   apiPath,
+  applyAction,
   onClose,
   onApply,
 }: QuickActionModalProps) {
@@ -54,17 +60,30 @@ export default function QuickActionModal({
   const handleConfirm = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch(apiPath, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target,
+      let result: QuickActionResponse;
+      if (applyAction) {
+        result = await applyAction({
           productId: drink.id,
           quantity,
           extendMinutes,
-        }),
-      });
-      const result: QuickActionResponse = await res.json();
+        });
+      } else if (apiPath) {
+        const res = await fetch(apiPath, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target,
+            productId: drink.id,
+            quantity,
+            extendMinutes,
+          }),
+        });
+        result = (await res.json()) as QuickActionResponse;
+      } else {
+        toast.error('No quick-action backend configured');
+        setIsProcessing(false);
+        return;
+      }
       if (result.ok && result.target) {
         toast.success(
           `${result.productAdded?.name} x${result.productAdded?.qty} added + ${result.timeExtended}min time`
@@ -73,8 +92,8 @@ export default function QuickActionModal({
       } else {
         toast.error(result.error ?? 'Quick action failed');
       }
-    } catch {
-      toast.error('Network error — quick action failed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Network error — quick action failed');
     } finally {
       setIsProcessing(false);
     }

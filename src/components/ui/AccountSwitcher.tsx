@@ -68,7 +68,7 @@ export default function AccountSwitcher({ onClose }: AccountSwitcherProps) {
                 </div>
                 <span
                   className={`text-xs font-bold flex-shrink-0 ${
-                    isActive ? user?.color ?? '' : account.color
+                    isActive ? (user?.color ?? '') : account.color
                   }`}
                 >
                   {roleLabels[account.role]}

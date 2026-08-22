@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShoppingCart,
   Pause,
@@ -11,12 +11,13 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import type { LiveSession } from './LiveSessionsContent';
+import { computeBill } from '@/lib/billing';
 
 interface SessionsGridProps {
   sessions: LiveSession[];
   onAddProduct: (session: LiveSession) => void;
   onQuickAction: (session: LiveSession) => void;
-  onTogglePause: (sessionId: string) => void;
+  onTogglePause: (sessionId: string) => void | Promise<void>;
   onEndSession: (session: LiveSession, elapsedMin: number) => void;
 }
 
@@ -27,12 +28,6 @@ function formatElapsed(minutes: number): string {
   const m = minutes % 60;
   if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
   return `${String(m).padStart(2, '0')}m`;
-}
-
-function calculateBill(session: LiveSession, elapsedMin: number): number {
-  const sessionCost = Math.round((elapsedMin / 60) * session.hourlyRate);
-  const productsCost = session.products.reduce((sum, p) => sum + p.price * p.qty, 0);
-  return sessionCost + productsCost;
 }
 
 function roomShort(room: string): string {
@@ -46,40 +41,17 @@ export default function SessionsGrid({
   onTogglePause,
   onEndSession,
 }: SessionsGridProps) {
-  const [elapsed, setElapsed] = useState<Record<string, number>>(
-    Object.fromEntries(sessions.map((s) => [s.id, s.startMinutesAgo]))
-  );
+  // Wall-clock derived timers: accurate even after tab suspension; realtime
+  // events keep startedAt/pausedSeconds in sync across all clients.
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [page, setPage] = useState(0);
 
-  const pausedRef = useRef<Set<string>>(new Set());
-
   useEffect(() => {
-    pausedRef.current = new Set(sessions.filter((s) => s.status === 'paused').map((s) => s.id));
-  }, [sessions]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsed((prev) =>
-        Object.fromEntries(
-          Object.entries(prev).map(([k, v]) => (pausedRef.current.has(k) ? [k, v] : [k, v + 1]))
-        )
-      );
-    }, 60000);
+    const interval = setInterval(() => setNowMs(Date.now()), 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Sync new sessions
-  useEffect(() => {
-    setElapsed((prev) => {
-      const updated = { ...prev };
-      sessions.forEach((s) => {
-        if (!(s.id in updated)) {
-          updated[s.id] = s.startMinutesAgo;
-        }
-      });
-      return updated;
-    });
-  }, [sessions]);
+  const billFor = (session: LiveSession) => computeBill(session, nowMs);
 
   const totalPages = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages - 1);
@@ -134,8 +106,8 @@ export default function SessionsGrid({
             </thead>
             <tbody>
               {paginatedSessions.map((session, idx) => {
-                const elapsedMin = elapsed[session.id] ?? session.startMinutesAgo;
-                const billTotal = calculateBill(session, elapsedMin);
+                const bill = billFor(session);
+                const elapsedMin = bill.elapsed;
                 const totalDuration =
                   session.sessionType === 'fixed'
                     ? (session.fixedDurationMinutes ?? 0) + (session.extendedMinutes ?? 0)
@@ -238,7 +210,7 @@ export default function SessionsGrid({
                     {/* Bill Total */}
                     <td className="px-4 py-3">
                       <p className="font-data-mono font-bold text-foreground whitespace-nowrap">
-                        {billTotal.toLocaleString()}{' '}
+                        {bill.subtotal.toLocaleString()}{' '}
                         <span className="text-[11px] font-semibold text-muted-foreground">EGP</span>
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">

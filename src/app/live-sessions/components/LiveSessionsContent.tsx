@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import LiveSessionsHeader from './LiveSessionsHeader';
 import SessionsGrid from './SessionsGrid';
 import PaymentModal from './PaymentModal';
@@ -9,32 +9,97 @@ import QuickActionModal, { type QuickActionTarget } from './QuickActionModal';
 import QuickActionsMenu from './QuickActionsMenu';
 import { Toaster } from 'sonner';
 import { MapPin } from 'lucide-react';
-import { initialSessions } from '../../../data/sessions';
-import type { LiveSession, SessionProduct } from '../../../data/sessions';
+import { toast } from 'sonner';
+import {
+  fetchLiveSessions,
+  subscribeLiveFloor,
+  pauseSession,
+  resumeSession,
+  extendSession,
+  addSessionProduct,
+  endSession,
+  type UiLiveSession,
+} from '@/lib/api/sessions';
+import type { CompletedSale } from '@/lib/api/sessions';
+import { computeBill } from '@/lib/billing';
 import { ZONES } from '../../../data/zones';
 import type { ZoneSession } from '../../../data/zones';
 
-export type { LiveSession, SessionProduct };
+export type { UiLiveSession as LiveSession };
 
-export const sessionsData = initialSessions;
+/** Product line used by the session modals (catalog or ad-hoc). */
+export interface SessionProduct {
+  id?: string;
+  productId?: string | null;
+  name: string;
+  price: number;
+  qty: number;
+}
+
+const REFRESH_DEBOUNCE_MS = 400;
 
 export default function LiveSessionsContent() {
-  const [sessions, setSessions] = useState<LiveSession[]>(initialSessions);
-  const [paymentTarget, setPaymentTarget] = useState<LiveSession | null>(null);
+  const [sessions, setSessions] = useState<UiLiveSession[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [, setNowMs] = useState(() => Date.now());
+  const [paymentTarget, setPaymentTarget] = useState<UiLiveSession | null>(null);
   const [paymentElapsedMin, setPaymentElapsedMin] = useState(0);
-  const [evaluationTarget, setEvaluationTarget] = useState<LiveSession | null>(null);
-  const [addProductTarget, setAddProductTarget] = useState<LiveSession | null>(null);
-  const [quickActionTarget, setQuickActionTarget] = useState<LiveSession | null>(null);
-  const [zones, setZones] = useState<ZoneSession[]>(ZONES);
+  const [evaluationTarget, setEvaluationTarget] = useState<UiLiveSession | null>(null);
+  const [addProductTarget, setAddProductTarget] = useState<UiLiveSession | null>(null);
+  const [quickActionTarget, setQuickActionTarget] = useState<UiLiveSession | null>(null);
   const [zoneMenuOpen, setZoneMenuOpen] = useState(false);
   const [zoneQuickActionTarget, setZoneQuickActionTarget] = useState<ZoneSession | null>(null);
 
-  const sessionToTarget = (session: LiveSession): QuickActionTarget => ({
+  const reload = useCallback(async () => {
+    try {
+      const data = await fetchLiveSessions();
+      setSessions(data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load live sessions');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Initial load + realtime subscription: every client sees starts/pauses/
+  // checkouts/product lines the moment they are committed — no polling.
+  useEffect(() => {
+    void reload();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = subscribeLiveFloor({
+      onChange: () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => void reload(), REFRESH_DEBOUNCE_MS);
+      },
+    });
+    return () => {
+      unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, [reload]);
+
+  // Display-only ticker so timers advance between realtime events.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowMs(Date.now());
+      setSessions((prev) =>
+        prev.map((s) => ({
+          ...s,
+          startMinutesAgo: computeBill(s).elapsed,
+        }))
+      );
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const sessionToTarget = (session: UiLiveSession): QuickActionTarget => ({
     ...session,
     label: session.room,
   });
 
-  const handleAddProduct = (sessionId: string, product: SessionProduct) => {
+  const handleAddProduct = async (sessionId: string, product: SessionProduct) => {
+    setAddProductTarget(null);
+    // Optimistic line append; realtime refetch reconciles with the server.
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id !== sessionId) return s;
@@ -47,59 +112,103 @@ export default function LiveSessionsContent() {
             ),
           };
         }
-        return { ...s, products: [...s.products, product] };
+        return { ...s, products: [...s.products, { ...product }] as never[] } as UiLiveSession;
       })
     );
-    setAddProductTarget(null);
+    try {
+      await addSessionProduct({
+        sessionId,
+        productId: 'productId' in product ? String(product.productId ?? '') || null : null,
+        name: product.name,
+        price: Number(product.price),
+        qty: product.qty,
+      });
+      toast.success(`${product.name} ×${product.qty} added to the bill`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not add product');
+      void reload();
+    }
   };
 
-  const handleTogglePause = (sessionId: string) => {
+  const handleTogglePause = async (sessionId: string) => {
+    const target = sessions.find((s) => s.id === sessionId);
+    if (!target) return;
+    const goingPaused = target.status === 'active';
+    // Optimistic flip
     setSessions((prev) =>
       prev.map((s) =>
-        s.id === sessionId ? { ...s, status: s.status === 'active' ? 'paused' : 'active' } : s
+        s.id === sessionId ? { ...s, status: goingPaused ? 'paused' : 'active' } : s
       )
     );
+    try {
+      if (goingPaused) await pauseSession(sessionId);
+      else await resumeSession(sessionId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not change session state');
+      void reload();
+    }
   };
 
-  const handleEndSession = (session: LiveSession, elapsedMin: number) => {
+  const handleEndSession = (session: UiLiveSession, elapsedMin: number) => {
     setPaymentElapsedMin(elapsedMin);
     setPaymentTarget(session);
   };
 
+  const handleConfirmPayment = async (
+    sessionId: string,
+    method: 'cash' | 'instapay' | 'vodafone'
+  ): Promise<CompletedSale> => {
+    const paymentMethod =
+      method === 'cash' ? 'Cash' : method === 'instapay' ? 'Transfer' : 'Wallet';
+    const sale = await endSession({ p_session_id: sessionId, p_payment_method: paymentMethod });
+    toast.success(`Invoice ${sale.invoiceNumber} — ${sale.total.toLocaleString()} EGP received`);
+    return sale;
+  };
+
   const handlePaymentComplete = (sessionId: string) => {
+    setPaymentTarget(null);
     const session = sessions.find((s) => s.id === sessionId);
-    if (session) {
-      setPaymentTarget(null);
-      setEvaluationTarget(session);
-    }
+    if (session) setEvaluationTarget(session);
+    else void reload();
   };
 
   const handleEvaluationComplete = (sessionId: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     setEvaluationTarget(null);
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
   };
 
-  const handleQuickAction = (updated: QuickActionTarget) => {
-    setSessions((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
-    setQuickActionTarget(null);
-  };
-
-  const handleZoneSelect = (zone: ZoneSession) => {
-    setZoneMenuOpen(false);
-    setZoneQuickActionTarget(zone);
-  };
-
-  const handleZoneQuickAction = (updated: QuickActionTarget) => {
-    setZones((prev) => prev.map((z) => (z.id === updated.id ? { ...z, ...updated } : z)));
-    setZoneQuickActionTarget(null);
+  const handleQuickAction = async (args: {
+    productId: string;
+    quantity: number;
+    extendMinutes: number;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    const target = quickActionTarget;
+    if (!target) return { ok: false, error: 'No session selected' };
+    try {
+      const calls: Promise<void>[] = [];
+      if (args.extendMinutes > 0) calls.push(extendSession(target.id, args.extendMinutes));
+      if (args.quantity > 0) {
+        calls.push(
+          addSessionProduct({
+            sessionId: target.id,
+            productId: args.productId.startsWith('prod-') ? null : args.productId,
+            name: 'Energy Drink',
+            price: 45,
+            qty: args.quantity,
+          })
+        );
+      }
+      await Promise.all(calls);
+      toast.success(`+${args.extendMinutes}min added · ${args.quantity} drink(s) on the bill`);
+      void reload();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'Quick action failed' };
+    }
   };
 
   const activeCount = sessions.filter((s) => s.status === 'active').length;
-  const liveRevenue = sessions.reduce((sum, s) => {
-    const sessionCost = Math.round((s.startMinutesAgo / 60) * s.hourlyRate);
-    const productsCost = s.products.reduce((p, prod) => p + prod.price * prod.qty, 0);
-    return sum + sessionCost + productsCost;
-  }, 0);
+  const liveRevenue = sessions.reduce((sum, s) => sum + computeBill(s).subtotal, 0);
   const pendingOrders = sessions.reduce(
     (sum, s) => sum + s.products.reduce((p, prod) => p + prod.qty, 0),
     0
@@ -115,55 +224,64 @@ export default function LiveSessionsContent() {
           sessionCount={sessions.length}
           onQuickStart={() => setZoneMenuOpen(true)}
         />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="glass-panel rounded-xl p-5 glow-hover">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Active Stations
-            </p>
-            <p className="text-3xl font-bold text-foreground font-tabular">
-              {activeCount}
-              <span className="text-lg font-semibold text-muted-foreground">/10</span>
-            </p>
+        {isLoading && sessions.length === 0 ? (
+          <div className="glass-panel rounded-xl p-16 text-center text-sm text-muted-foreground">
+            Connecting to live floor…
           </div>
-          <div className="glass-panel rounded-xl p-5 glow-hover">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Live Revenue
-            </p>
-            <p className="text-3xl font-bold text-accent font-tabular">
-              {liveRevenue.toLocaleString()}{' '}
-              <span className="text-sm font-semibold text-accent/70">EGP</span>
-            </p>
-          </div>
-          <div className="glass-panel rounded-xl p-5 glow-hover">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Pending Orders
-            </p>
-            <p className="text-3xl font-bold text-warning font-tabular">{pendingOrders}</p>
-          </div>
-          <button className="glass-panel rounded-xl p-5 glow-hover text-left flex items-center gap-3 group hover:border-primary/50 transition-all duration-200">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center flex-shrink-0">
-              <MapPin size={18} />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="glass-panel rounded-xl p-5 glow-hover">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Active Stations
+                </p>
+                <p className="text-3xl font-bold text-foreground font-tabular">
+                  {activeCount}
+                  <span className="text-lg font-semibold text-muted-foreground">/10</span>
+                </p>
+              </div>
+              <div className="glass-panel rounded-xl p-5 glow-hover">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Live Revenue
+                </p>
+                <p className="text-3xl font-bold text-accent font-tabular">
+                  {liveRevenue.toLocaleString()}{' '}
+                  <span className="text-sm font-semibold text-accent/70">EGP</span>
+                </p>
+              </div>
+              <div className="glass-panel rounded-xl p-5 glow-hover">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Pending Orders
+                </p>
+                <p className="text-3xl font-bold text-warning font-tabular">{pendingOrders}</p>
+              </div>
+              <button className="glass-panel rounded-xl p-5 glow-hover text-left flex items-center gap-3 group hover:border-primary/50 transition-all duration-200">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center flex-shrink-0">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-primary group-hover:underline underline-offset-2">
+                    View Floor Plan
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Open interactive map</p>
+                </div>
+              </button>
             </div>
-            <div>
-              <p className="text-sm font-bold text-primary group-hover:underline underline-offset-2">
-                View Floor Plan
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">Open interactive map</p>
-            </div>
-          </button>
-        </div>
-        <SessionsGrid
-          sessions={sessions}
-          onAddProduct={(s) => setAddProductTarget(s)}
-          onQuickAction={(s) => setQuickActionTarget(s)}
-          onTogglePause={handleTogglePause}
-          onEndSession={handleEndSession}
-        />
+            <SessionsGrid
+              sessions={sessions}
+              onAddProduct={(s) => setAddProductTarget(s)}
+              onQuickAction={(s) => setQuickActionTarget(s)}
+              onTogglePause={handleTogglePause}
+              onEndSession={handleEndSession}
+            />
+          </>
+        )}
         {paymentTarget && (
           <PaymentModal
             session={paymentTarget}
             elapsedMin={paymentElapsedMin}
             onClose={() => setPaymentTarget(null)}
+            onConfirmPayment={handleConfirmPayment}
             onPaymentComplete={handlePaymentComplete}
           />
         )}
@@ -180,16 +298,19 @@ export default function LiveSessionsContent() {
         {quickActionTarget && (
           <QuickActionModal
             target={sessionToTarget(quickActionTarget)}
-            apiPath="/api/quick-action"
+            applyAction={handleQuickAction}
             onClose={() => setQuickActionTarget(null)}
-            onApply={handleQuickAction}
+            onApply={() => setQuickActionTarget(null)}
           />
         )}
         {zoneMenuOpen && (
           <QuickActionsMenu
-            zones={zones}
+            zones={ZONES}
             onClose={() => setZoneMenuOpen(false)}
-            onSelect={handleZoneSelect}
+            onSelect={(zone) => {
+              setZoneMenuOpen(false);
+              setZoneQuickActionTarget(zone);
+            }}
           />
         )}
         {zoneQuickActionTarget && (
@@ -197,7 +318,11 @@ export default function LiveSessionsContent() {
             target={{ ...zoneQuickActionTarget, label: zoneQuickActionTarget.zoneName }}
             apiPath="/api/zones/quick-action"
             onClose={() => setZoneQuickActionTarget(null)}
-            onApply={handleZoneQuickAction}
+            onApply={(updated) => {
+              void updated;
+              setZoneQuickActionTarget(null);
+              toast.info('Station state is visual-only until zones migration');
+            }}
           />
         )}
       </div>

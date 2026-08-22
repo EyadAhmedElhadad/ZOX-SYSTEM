@@ -15,9 +15,7 @@ export async function createSupabaseServerClient() {
       getAll: () => cookieStore.getAll(),
       setAll: (cookiesToSet) => {
         try {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
           // Called from a Server Component — safe to ignore when middleware
           // refreshes sessions.
@@ -28,13 +26,13 @@ export async function createSupabaseServerClient() {
 }
 
 /** Service-role client — SERVER ONLY (route handlers / scripts). Never import in client code. */
-export function createSupabaseAdminClient() {
+export async function createSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY missing — admin operations unavailable.');
   }
-  // Lazy import keeps the key out of any client bundle graph.
-  const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js');
+  // Dynamic import keeps the key out of any client bundle graph.
+  const { createClient } = await import('@supabase/supabase-js');
   return createClient(url, serviceKey, { auth: { persistSession: false } });
 }
