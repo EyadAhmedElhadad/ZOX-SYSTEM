@@ -112,7 +112,18 @@ export default function LiveSessionsContent() {
             ),
           };
         }
-        return { ...s, products: [...s.products, { ...product }] as never[] } as UiLiveSession;
+        return {
+          ...s,
+          products: [
+            ...s.products,
+            {
+              id: product.id ?? `optimistic-${sessionId}-${Date.now()}`,
+              name: product.name,
+              price: product.price,
+              qty: product.qty,
+            },
+          ],
+        };
       })
     );
     try {

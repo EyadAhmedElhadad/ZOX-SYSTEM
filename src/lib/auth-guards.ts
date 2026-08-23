@@ -47,7 +47,8 @@ export function canAccessRoute(role: UserRole, path: string): boolean {
   if (role === 'staff') return STAFF_ROUTES.includes(path);
   if (role === 'manager') return MANAGER_ROUTES.includes(path);
   if (role === 'owner') return OWNER_ROUTES.includes(path);
-  return true;
+  // Unknown/unexpected role -> fail closed (consistent with middleware.ts).
+  return false;
 }
 
 export function homePathForRole(role: UserRole): string {

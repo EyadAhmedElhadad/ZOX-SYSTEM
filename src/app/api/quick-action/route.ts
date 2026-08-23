@@ -15,13 +15,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const session: LiveSession | undefined = body?.target;
+    const requestedId: unknown = body?.target?.id;
     const productId: unknown = body?.productId;
     const quantity: unknown = body?.quantity;
     const extendMinutes: unknown = body?.extendMinutes;
 
-    if (!session?.id) {
+    if (typeof requestedId !== 'string' || !requestedId) {
       return NextResponse.json({ ok: false, error: 'session is required' }, { status: 400 });
+    }
+
+    // Look up the authoritative session server-side — never trust pricing
+    // fields (hourlyRate, products, etc.) sent by the client.
+    const session = store.get(requestedId);
+    if (!session) {
+      return NextResponse.json({ ok: false, error: 'Unknown session' }, { status: 400 });
     }
 
     const product = catalogProducts.find((p) => p.id === productId);
