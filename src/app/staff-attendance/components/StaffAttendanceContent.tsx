@@ -146,7 +146,7 @@ export default function StaffAttendanceContent() {
   const [currentDate, setCurrentDate] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data, loading, error, reload } = useAsyncData<StaffShift[]>(async () => {
+  const { data, loading, reload } = useAsyncData<StaffShift[]>(async () => {
     const [staff, roster] = await Promise.all([staffApi.list(), attendanceApi.todayRoster()]);
     const byId = new Map(roster.map((r) => [r.staffId, r]));
     return staff
