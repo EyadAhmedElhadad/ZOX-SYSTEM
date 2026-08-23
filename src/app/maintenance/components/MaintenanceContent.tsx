@@ -15,7 +15,6 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 import { maintenanceApi, useAsyncData, toastApiError, type UiMaintenanceTask } from '@/lib/api';
 
 type MaintenanceTask = UiMaintenanceTask;
@@ -47,7 +46,6 @@ const initialForm = {
 };
 
 export default function MaintenanceContent() {
-  const { user } = useAuth();
   const { data, loading, reload } = useAsyncData(() => maintenanceApi.list(), []);
   const tasks = data ?? [];
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');

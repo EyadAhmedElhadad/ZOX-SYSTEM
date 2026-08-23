@@ -18,17 +18,36 @@ const STAFF_ROUTES = [
   '/live-sessions',
   '/customers',
   '/waiting-list',
-  '/sales',
+];
+
+const MANAGER_ROUTES = [
+  ...STAFF_ROUTES,
   '/inventory',
+  '/rooms',
+  '/reports',
   '/hardware',
   '/lost-found',
+];
+
+const OWNER_ROUTES = [
+  ...MANAGER_ROUTES,
+  '/sales',
+  '/expenses',
+  '/staff',
+  '/staff-attendance',
+  '/loyalty',
+  '/feedback',
+  '/audit-logs',
+  '/settings',
+  '/maintenance',
 ];
 
 function canAccess(role: string, path: string): boolean {
   if (PUBLIC_ROUTES.includes(path)) return true;
   if (role === 'customer') return CUSTOMER_ROUTES.includes(path);
   if (role === 'staff') return STAFF_ROUTES.includes(path);
-  return role === 'owner' || role === 'manager';
+  if (role === 'manager') return MANAGER_ROUTES.includes(path);
+  return role === 'owner' ? OWNER_ROUTES.includes(path) : false;
 }
 
 function homeFor(role: string): string {

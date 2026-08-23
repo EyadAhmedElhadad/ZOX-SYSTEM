@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Copy, Check, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { demoAccounts, roleLabels, homePathForRole } from '@/lib/demoAccounts';
 
 interface LoginFormData {
@@ -38,16 +39,16 @@ export default function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    const account = await login(data.email, data.password);
-    if (!account) {
-      setError('email', {
-        message: 'Invalid credentials — use the demo accounts below to sign in',
-      });
-      setIsLoading(false);
+    const result = await login(data.email, data.password, data.remember);
+    setIsLoading(false);
+    if (!result.ok) {
+      setError('email', { message: result.error });
+      toast.error(result.error);
       return;
     }
+    const account = result.user;
+    toast.success(`Welcome back, ${account.name}!`);
     router.push(homePathForRole(account.role));
-    setIsLoading(false);
   };
 
   const fillCredentials = (account: DemoAccount) => {

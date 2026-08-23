@@ -33,16 +33,44 @@ interface RegisterData {
   password: string;
 }
 
+export type LoginResult =
+  { ok: true; user: ZooxUser } | { ok: false; error: string; code?: string };
+
+export type RegisterResult =
+  { ok: true; user: ZooxUser } | { ok: false; error: string; code?: string };
+
 interface AuthContextValue {
   user: ZooxUser | null;
   role: UserRole | null;
   ready: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<ZooxUser | null>;
-  register: (data: RegisterData) => Promise<ZooxUser | null>;
+  login: (email: string, password: string, remember?: boolean) => Promise<LoginResult>;
+  register: (data: RegisterData) => Promise<RegisterResult>;
   sendMagicLink: (email: string) => Promise<boolean>;
   switchAccount?: undefined;
   logout: () => Promise<void>;
   homePath: () => string;
+}
+
+function friendlyAuthError(error: { message?: string; code?: string } | null): string {
+  const msg = (error?.message ?? '').toLowerCase();
+  const code = error?.code;
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed')) {
+    return 'Please confirm your email address before signing in.';
+  }
+  if (code === 'user_not_found' || msg.includes('user not found')) {
+    return 'No account was found with this email address.';
+  }
+  if (code === 'invalid_credentials' || msg.includes('invalid login credentials')) {
+    return 'Incorrect email or password. Please try again.';
+  }
+  if (msg.includes('too many requests') || msg.includes('rate limit')) {
+    return 'Too many attempts. Please wait a moment and try again.';
+  }
+  if (msg.includes('signup is disabled') || msg.includes('sign-ups not allowed')) {
+    return 'Account registration is currently disabled.';
+  }
+  if (msg) return error?.message ?? 'Unable to sign in. Please try again.';
+  return 'Unable to sign in. Please try again.';
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -110,31 +138,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [session, profile]
   );
 
-  const login = useCallback(async (email: string, password: string): Promise<ZooxUser | null> => {
-    const supabase = getSupabaseBrowserClient();
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.session) return null;
-    setSession(data.session);
-    const p = await loadProfile(data.user.id);
-    setProfile(p);
-    return toZooxUser(data.user, p);
+  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.session || !data.user) {
+        return { ok: false, error: friendlyAuthError(error), code: error?.code };
+      }
+      setSession(data.session);
+      let p: Awaited<ReturnType<typeof loadProfile>> = null;
+      try {
+        p = await loadProfile(data.user.id);
+      } catch {
+        // Profile row may not exist yet; fall back to metadata.
+      }
+      setProfile(p);
+      return { ok: true, user: toZooxUser(data.user, p) };
+    } catch {
+      return {
+        ok: false,
+        error: 'Network error — unable to reach the server. Check your connection.',
+      };
+    }
   }, []);
 
-  const register = useCallback(async (data: RegisterData): Promise<ZooxUser | null> => {
-    const supabase = getSupabaseBrowserClient();
-    const { data: res, error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: { data: { full_name: data.name, phone: data.phone ?? '' } },
-    });
-    if (error || !res.user) return null;
-    // Profile row is auto-created by the handle_new_user trigger.
-    const p = res.session ? await loadProfile(res.user.id) : null;
-    if (res.session) {
-      setSession(res.session);
-      setProfile(p);
+  const register = useCallback(async (data: RegisterData): Promise<RegisterResult> => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: res, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: { data: { full_name: data.name, phone: data.phone ?? '' } },
+      });
+      if (error || !res.user) {
+        return { ok: false, error: friendlyAuthError(error), code: error?.code };
+      }
+      // Profile row is auto-created by the handle_new_user trigger.
+      const p = res.session ? await loadProfile(res.user.id) : null;
+      if (res.session) {
+        setSession(res.session);
+        setProfile(p);
+      }
+      return { ok: true, user: toZooxUser(res.user, p) };
+    } catch {
+      return {
+        ok: false,
+        error: 'Network error — unable to reach the server. Check your connection.',
+      };
     }
-    return toZooxUser(res.user, p);
   }, []);
 
   const sendMagicLink = useCallback(async (email: string): Promise<boolean> => {
@@ -177,4 +228,8 @@ export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
   return ctx;
+}
+
+export function useRole(): UserRole | null {
+  return useAuth().role;
 }

@@ -72,8 +72,13 @@ const staffNav: NavItem[] = [
     badge: 2,
     section: 'operations',
   },
-  { label: 'Sales', href: '/sales', icon: <ShoppingCart size={18} />, section: 'operations' },
+];
+
+const managerNav: NavItem[] = [
+  ...staffNav,
   { label: 'Inventory', href: '/inventory', icon: <Package size={18} />, section: 'operations' },
+  { label: 'Rooms', href: '/rooms', icon: <Building2 size={18} />, section: 'operations' },
+  { label: 'Reports', href: '/reports', icon: <BarChart3 size={18} />, section: 'analytics' },
   { label: 'Hardware', href: '/hardware', icon: <Gamepad2 size={18} />, section: 'support' },
   {
     label: 'Lost & Found',
@@ -184,6 +189,7 @@ interface SidebarProps {
 
 interface SidebarContentProps {
   collapsed: boolean;
+  effectiveRole: 'owner' | 'manager' | 'staff' | 'customer';
   groupedNav: Record<string, NavItem[]>;
   isActive: (href: string) => boolean;
   roleLabel: string;
@@ -199,6 +205,7 @@ interface SidebarContentProps {
 
 function SidebarContent({
   collapsed,
+  effectiveRole,
   groupedNav,
   isActive,
   roleLabel,
@@ -266,7 +273,7 @@ function SidebarContent({
             )}
             {items.map((item) => (
               <Link
-                key={`nav-${item.href}`}
+                key={`nav-${item.href}-${item.label}`}
                 href={item.href === '/staff-dashboard' ? '/' : item.href}
                 className={`nav-item mb-0.5 relative ${isActive(item.href) ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''} hover:translate-x-0.5`}
                 title={collapsed ? item.label : undefined}
@@ -289,14 +296,16 @@ function SidebarContent({
 
       {/* Bottom */}
       <div className="border-t border-border p-2">
-        <button
-          onClick={onSwitchAccount}
-          className={`nav-item w-full mb-1 ${collapsed ? 'justify-center' : ''} hover:bg-muted/70`}
-          title={collapsed ? 'Switch Account' : undefined}
-        >
-          <Repeat size={18} />
-          {!collapsed && <span>Switch Account</span>}
-        </button>
+        {effectiveRole !== 'staff' && (
+          <button
+            onClick={onSwitchAccount}
+            className={`nav-item w-full mb-1 ${collapsed ? 'justify-center' : ''} hover:bg-muted/70`}
+            title={collapsed ? 'Switch Account' : undefined}
+          >
+            <Repeat size={18} />
+            {!collapsed && <span>Switch Account</span>}
+          </button>
+        )}
         <div className="flex items-center gap-2 mb-2">
           <ThemeToggle />
           <button
@@ -351,7 +360,13 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
 
   const effectiveRole = user?.role ?? role;
   const navItems =
-    effectiveRole === 'staff' ? staffNav : effectiveRole === 'customer' ? customerNav : ownerNav;
+    effectiveRole === 'staff'
+      ? staffNav
+      : effectiveRole === 'manager'
+        ? managerNav
+        : effectiveRole === 'customer'
+          ? customerNav
+          : ownerNav;
 
   const groupedNav = navItems.reduce<Record<string, NavItem[]>>((acc, item) => {
     const section = item.section || 'main';
@@ -415,6 +430,7 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
             </button>
             <SidebarContent
               collapsed={collapsed}
+              effectiveRole={effectiveRole}
               groupedNav={groupedNav}
               isActive={isActive}
               roleLabel={roleLabel}
@@ -437,6 +453,7 @@ export default function Sidebar({ currentPath, role = 'staff' }: SidebarProps) {
       >
         <SidebarContent
           collapsed={collapsed}
+          effectiveRole={effectiveRole}
           groupedNav={groupedNav}
           isActive={isActive}
           roleLabel={roleLabel}

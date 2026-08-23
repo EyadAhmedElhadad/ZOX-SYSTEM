@@ -1,5 +1,27 @@
-const CACHE_NAME = 'zoox-shell-v2';
-const RUNTIME_CACHE = 'zoox-runtime-v2';
+const CACHE_NAME = 'zoox-shell-v3';
+const RUNTIME_CACHE = 'zoox-runtime-v3';
+
+// Dev guard: if this worker somehow gets registered on localhost, purge every
+// cache, stop intercepting requests and unregister itself immediately.
+const IS_LOCAL =
+  self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+
+if (IS_LOCAL) {
+  self.addEventListener('install', () => {
+    self.skipWaiting();
+  });
+
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+        .then(() => self.registration.unregister())
+        .then(() => self.clients.matchAll())
+        .then((clients) => clients.forEach((client) => client.navigate(client.url)))
+    );
+  });
+} else {
 const APP_SHELL_URLS = [
   '/',
   '/live-sessions',
@@ -15,11 +37,24 @@ const APP_SHELL_URLS = [
 
 const NAVIGATION_FALLBACK = '/';
 
+async function cacheAvailableUrls(cache, urls) {
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (response.ok) await cache.put(url, response);
+      } catch {
+        // Optional shell assets should not prevent the worker from installing.
+      }
+    })
+  );
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL_URLS))
+      .then((cache) => cacheAvailableUrls(cache, APP_SHELL_URLS))
       .then(() => self.skipWaiting())
   );
 });
@@ -90,8 +125,9 @@ self.addEventListener('fetch', (event) => {
             return response;
           })
           .catch(() => cached);
-        return cached || network;
+        return cached || network || new Response('', { status: 504, statusText: 'Offline' });
       })
     )
   );
 });
+}

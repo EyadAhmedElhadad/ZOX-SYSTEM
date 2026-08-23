@@ -33,7 +33,6 @@ export interface Reservation {
   category?: 'playstation' | 'billiards' | 'cafe';
 }
 
-
 const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
 function MiniCalendar() {
@@ -227,30 +226,30 @@ export default function ReservationsContent() {
       {loading ? (
         <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>
       ) : (
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <div className="xl:col-span-3 space-y-6">
-          <ReservationFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            dateFilter={dateFilter}
-            onDateChange={setDateFilter}
-            reservations={reservations}
-            isCustomer={isCustomer}
-          />
-          <ReservationsTable
-            reservations={filtered}
-            onStatusChange={handleStatusChange}
-            onRateCustomer={isCustomer ? undefined : setRateTarget}
-            isCustomer={isCustomer}
-          />
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          <div className="xl:col-span-3 space-y-6">
+            <ReservationFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              dateFilter={dateFilter}
+              onDateChange={setDateFilter}
+              reservations={reservations}
+              isCustomer={isCustomer}
+            />
+            <ReservationsTable
+              reservations={filtered}
+              onStatusChange={handleStatusChange}
+              onRateCustomer={isCustomer ? undefined : setRateTarget}
+              isCustomer={isCustomer}
+            />
+          </div>
+          <div className="xl:col-span-1 space-y-6">
+            <MiniCalendar />
+            <CapacitySnapshot />
+          </div>
         </div>
-        <div className="xl:col-span-1 space-y-6">
-          <MiniCalendar />
-          <CapacitySnapshot />
-        </div>
-      </div>
       )}
       {drawerOpen && (
         <ReservationDrawer onClose={() => setDrawerOpen(false)} onSave={handleAddReservation} />

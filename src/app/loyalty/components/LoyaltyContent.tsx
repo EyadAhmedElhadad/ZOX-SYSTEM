@@ -31,10 +31,11 @@ const statusStyles: Record<UiLoyaltyMember['status'], string> = {
 };
 
 export default function LoyaltyContent() {
-  const { data: memberData, loading, reload: reloadMembers } = useAsyncData(
-    () => loyaltyApi.listMembers(),
-    []
-  );
+  const {
+    data: memberData,
+    loading,
+    reload: reloadMembers,
+  } = useAsyncData(() => loyaltyApi.listMembers(), []);
   const { data: rewardData, reload: reloadRewards } = useAsyncData(() => rewardsApi.list(), []);
   const members = memberData ?? [];
   const rewards = rewardData ?? [];

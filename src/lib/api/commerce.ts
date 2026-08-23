@@ -1,15 +1,13 @@
 'use client';
 
 import type { ExpenseRow, InventoryItemRow, SaleItemRow, SaleRow } from '@/lib/supabase/types';
-import { expenseSchema, inventoryAdjustSchema, inventoryItemSchema, saleSchema } from '@/lib/validation';
 import {
-  apiError,
-  deleteRow,
-  fetchAll,
-  hhmm,
-  insertRow,
-  updateRow,
-} from './base';
+  expenseSchema,
+  inventoryAdjustSchema,
+  inventoryItemSchema,
+  saleSchema,
+} from '@/lib/validation';
+import { apiError, deleteRow, fetchAll, hhmm, insertRow, updateRow } from './base';
 
 // ---------------------------------------------------------------------------
 // Sales (café POS + session billing history)
@@ -129,7 +127,10 @@ export interface UiExpense {
 
 export const expensesApi = {
   async list(): Promise<UiExpense[]> {
-    const rows = await fetchAll<ExpenseRow>('expenses', { order: 'expense_date', ascending: false });
+    const rows = await fetchAll<ExpenseRow>('expenses', {
+      order: 'expense_date',
+      ascending: false,
+    });
     return rows.map((row) => ({
       id: row.id,
       title: row.title,

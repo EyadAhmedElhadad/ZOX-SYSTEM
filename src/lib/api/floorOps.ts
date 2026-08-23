@@ -1,6 +1,5 @@
 'use client';
 
-import { z } from 'zod';
 import type {
   CatalogProductRow,
   ReservationRow,
@@ -8,14 +7,7 @@ import type {
   WaitingListRow,
 } from '@/lib/supabase/types';
 import { roomSchema, reservationSchema, waitingSchema } from '@/lib/validation';
-import {
-  deleteRow,
-  enGBDateTime,
-  fetchAll,
-  hhmm,
-  insertRow,
-  updateRow,
-} from './base';
+import { deleteRow, enGBDateTime, fetchAll, hhmm, insertRow, updateRow } from './base';
 
 // ---------------------------------------------------------------------------
 // Rooms
@@ -101,14 +93,7 @@ export const catalogApi = {
 // Reservations
 // ---------------------------------------------------------------------------
 export type UiReservationStatus =
-  | 'Reserved'
-  | 'Arrived'
-  | 'Active'
-  | 'Completed'
-  | 'Cancelled'
-  | 'No Show'
-  | 'Waiting'
-  | 'Late';
+  'Reserved' | 'Arrived' | 'Active' | 'Completed' | 'Cancelled' | 'No Show' | 'Waiting' | 'Late';
 
 export interface UiReservation {
   id: string;
@@ -139,10 +124,7 @@ function mapReservation(row: JoinedReservation): UiReservation {
   return {
     id: row.id,
     customerId: row.customer_id,
-    customer:
-      row.customers?.name ||
-      row.guest_name ||
-      'Guest',
+    customer: row.customers?.name || row.guest_name || 'Guest',
     phone: row.phone,
     roomId: row.room_id,
     room: row.rooms?.name ?? 'Unassigned',
@@ -248,7 +230,10 @@ export const waitingApi = {
     await insertRow('waiting_list', v);
   },
   async notify(id: string): Promise<void> {
-    await updateRow('waiting_list', id, { status: 'Notified', notified_at: new Date().toISOString() });
+    await updateRow('waiting_list', id, {
+      status: 'Notified',
+      notified_at: new Date().toISOString(),
+    });
   },
   async seat(id: string, roomId: string | null): Promise<void> {
     await updateRow('waiting_list', id, { status: 'Seated', seated_room_id: roomId });

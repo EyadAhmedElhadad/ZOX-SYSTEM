@@ -1,25 +1,11 @@
 'use client';
 import React, { useState, useMemo } from 'react';
-import { Wallet, Monitor, Star, Receipt, TrendingUp } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Wallet, Monitor, Star, Receipt } from 'lucide-react';
 import { loadSales } from '@/data/sales';
 import { loadFeedback } from '@/data/feedback';
 import { loadExpenses } from '@/data/expenses';
 import { initialSessions } from '@/data/sessions';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts';
 
 type RangeKey = '7d' | '30d' | 'all';
 
@@ -30,20 +16,23 @@ const rangeOptions: { id: RangeKey; label: string }[] = [
 ];
 
 const SEED_REVENUE = [1800, 2300, 1500, 2900, 3200, 2700, 2840];
-const CATEGORY_COLORS = ['#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
-
-const tooltipStyle = {
-  background: '#13111f',
-  border: '1px solid #2a2640',
-  borderRadius: 8,
-  fontSize: 12,
-};
 
 function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
     d.getDate()
   ).padStart(2, '0')}`;
 }
+
+// recharts is heavy; load it lazily so it stays out of the initial bundle.
+const ReportsCharts = dynamic(() => import('./ReportsCharts'), {
+  ssr: false,
+  loading: () => (
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="xl:col-span-2 card-base p-5 h-[320px] animate-pulse bg-muted/30" />
+      <div className="card-base p-5 h-[320px] animate-pulse bg-muted/30" />
+    </div>
+  ),
+});
 
 export default function ReportsContent() {
   const [range, setRange] = useState<RangeKey>('7d');
@@ -201,121 +190,15 @@ export default function ReportsContent() {
         </div>
       </div>
 
-      {/* Revenue + Category pie */}
+      <ReportsCharts
+        rangeLabel={rangeOptions.find((r) => r.id === range)?.label ?? ''}
+        revenueData={revenueData}
+        categoryData={categoryData}
+        sessionData={sessionData}
+      />
+
+      {/* Feedback */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 card-base p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={16} className="text-primary" />
-            <h2 className="text-base font-semibold text-foreground">
-              Revenue Trend ({rangeOptions.find((r) => r.id === range)?.label})
-            </h2>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2640" vertical={false} />
-              <XAxis
-                dataKey="date"
-                stroke="#8b85a0"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis stroke="#8b85a0" fontSize={11} tickLine={false} axisLine={false} width={50} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#7c3aed"
-                strokeWidth={2}
-                fill="url(#revenueGradient)"
-                name="Revenue"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="card-base p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Wallet size={16} className="text-accent" />
-            <h2 className="text-base font-semibold text-foreground">Sales by Category</h2>
-          </div>
-          {categoryData.length === 0 ? (
-            <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
-              No sales in this period
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={3}
-                  stroke="#13111f"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${entry.name}`}
-                      fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 12, color: '#8b85a0' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      {/* Sessions + Feedback */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 card-base p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Monitor size={16} className="text-info" />
-            <h2 className="text-base font-semibold text-foreground">Sessions by Room Type</h2>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={sessionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2640" vertical={false} />
-              <XAxis
-                dataKey="roomType"
-                stroke="#8b85a0"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#8b85a0"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                width={40}
-                allowDecimals={false}
-              />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="sessions" name="Sessions" radius={[6, 6, 0, 0]}>
-                {sessionData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${entry.roomType}`}
-                    fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
         <div className="card-base p-5">
           <div className="flex items-center gap-2 mb-4">
             <Star size={16} className="text-warning fill-warning" />

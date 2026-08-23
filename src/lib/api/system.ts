@@ -47,7 +47,7 @@ export const auditApi = {
 // ---------------------------------------------------------------------------
 // Settings (singleton)
 // ---------------------------------------------------------------------------
-export interface UiSettings extends Omit<SettingsRow, 'id' | 'updated_by'> {}
+export type UiSettings = Omit<SettingsRow, 'id' | 'updated_by'>;
 
 export const settingsApi = {
   async get(): Promise<UiSettings | null> {
@@ -60,7 +60,10 @@ export const settingsApi = {
   async update(patch: Partial<UiSettings>): Promise<void> {
     const supabaseModule = await import('@/lib/supabase/client');
     const client = supabaseModule.getSupabaseBrowserClient();
-    const { error } = await client.from('settings').update(patch as never).eq('id', 1);
+    const { error } = await client
+      .from('settings')
+      .update(patch as never)
+      .eq('id', 1);
     if (error) throw new Error(error.message);
   },
 };
@@ -113,10 +116,7 @@ export const reportsApi = {
   async topCustomers(limit = 10): Promise<TopCustomerView[]> {
     const supabaseModule = await import('@/lib/supabase/client');
     const client = supabaseModule.getSupabaseBrowserClient();
-    const { data, error } = await client
-      .from('top_customers_view')
-      .select('*')
-      .limit(limit);
+    const { data, error } = await client.from('top_customers_view').select('*').limit(limit);
     if (error) throw new Error(error.message);
     return (data ?? []) as TopCustomerView[];
   },

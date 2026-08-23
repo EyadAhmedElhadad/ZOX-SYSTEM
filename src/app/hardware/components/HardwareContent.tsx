@@ -312,7 +312,7 @@ export default function HardwareContent() {
                       <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                         {item.serial}
                       </td>
-                       <td className="px-4 py-3 text-muted-foreground">{item.location}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{item.location}</td>
                       <td className={`px-4 py-3 font-semibold ${conditionStyles[item.condition]}`}>
                         {item.condition}
                       </td>

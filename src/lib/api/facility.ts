@@ -1,10 +1,6 @@
 'use client';
 
-import type {
-  HardwareRow,
-  LostFoundRow,
-  MaintenanceTaskRow,
-} from '@/lib/supabase/types';
+import type { HardwareRow, LostFoundRow, MaintenanceTaskRow } from '@/lib/supabase/types';
 import { hardwareSchema, lostFoundSchema, maintenanceSchema } from '@/lib/validation';
 import { deleteRow, enGBDateTime, fetchAll, hhmm, insertRow, updateRow } from './base';
 
@@ -32,7 +28,8 @@ interface JoinedTask extends MaintenanceTaskRow {
 export const maintenanceApi = {
   async list(): Promise<UiMaintenanceTask[]> {
     const rows = await fetchAll<JoinedTask>('maintenance_tasks', {
-      select: '*, assigned:staff!maintenance_tasks_assigned_to_fkey(name), reporter:staff!maintenance_tasks_reported_by_fkey(name)',
+      select:
+        '*, assigned:staff!maintenance_tasks_assigned_to_fkey(name), reporter:staff!maintenance_tasks_reported_by_fkey(name)',
       order: 'reported_at',
       ascending: false,
     });
@@ -125,11 +122,7 @@ export const hardwareApi = {
     ] as const) {
       if (patch[key] === undefined) continue;
       const dbKey =
-        key === 'purchaseDate'
-          ? 'purchase_date'
-          : key === 'lastServiced'
-            ? 'last_serviced'
-            : key;
+        key === 'purchaseDate' ? 'purchase_date' : key === 'lastServiced' ? 'last_serviced' : key;
       values[dbKey] = patch[key];
     }
     await updateRow('hardware', id, values);
@@ -157,7 +150,10 @@ export interface UiLostFoundItem {
 
 export const lostFoundApi = {
   async list(): Promise<UiLostFoundItem[]> {
-    const rows = await fetchAll<LostFoundRow>('lost_found', { order: 'found_at', ascending: false });
+    const rows = await fetchAll<LostFoundRow>('lost_found', {
+      order: 'found_at',
+      ascending: false,
+    });
     return rows.map((row) => ({
       id: row.id,
       description: row.description,

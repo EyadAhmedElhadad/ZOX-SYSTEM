@@ -166,105 +166,107 @@ export default function RoomsContent() {
       {loading ? (
         <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>
       ) : (
-      <>
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {statusTabs.map((tab) => {
-          const count =
-            tab.id === 'All' ? rooms.length : rooms.filter((r) => r.status === tab.id).length;
-          return (
-            <button
-              key={`tab-${tab.id}`}
-              onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 ${
-                statusFilter === tab.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {tab.label}
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  statusFilter === tab.id
-                    ? 'bg-primary-foreground/20 text-primary-foreground'
-                    : 'bg-background text-muted-foreground'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Room grid */}
-      {filtered.length === 0 ? (
-        <div className="card-base flex flex-col items-center justify-center text-center gap-3 py-16">
-          <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
-            <Building2 size={22} className="text-muted-foreground" />
-          </div>
-          <p className="text-sm font-semibold text-foreground">No rooms here</p>
-          <p className="text-xs text-muted-foreground max-w-xs">
-            Try a different status filter to see more rooms.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((room) => (
-            <div
-              key={room.id}
-              className={`card-base card-hover p-4 flex flex-col gap-3 ${bgStyles[room.status]}`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="font-bold text-foreground truncate">{room.name}</h3>
-                  <span className={`status-badge mt-1.5 ${typeStyles[room.roomType]}`}>
-                    {room.roomType}
-                  </span>
-                </div>
-                <select
-                  value={room.status}
-                  onChange={(e) => handleStatusChange(room.id, e.target.value as RoomStatus)}
-                  className={`status-badge cursor-pointer outline-none appearance-none text-center pr-2 flex-shrink-0 ${statusStyles[room.status]}`}
-                  title="Change status"
+        <>
+          {/* Filter tabs */}
+          <div className="flex flex-wrap gap-1.5">
+            {statusTabs.map((tab) => {
+              const count =
+                tab.id === 'All' ? rooms.length : rooms.filter((r) => r.status === tab.id).length;
+              return (
+                <button
+                  key={`tab-${tab.id}`}
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 ${
+                    statusFilter === tab.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  <option value="Available">Available</option>
-                  <option value="Occupied">Occupied</option>
-                  <option value="Reserved">Reserved</option>
-                  <option value="Maintenance">Maintenance</option>
-                </select>
-              </div>
+                  {tab.label}
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      statusFilter === tab.id
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-background text-muted-foreground'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Gamepad2 size={14} />
-                <span>{room.psModel}</span>
+          {/* Room grid */}
+          {filtered.length === 0 ? (
+            <div className="card-base flex flex-col items-center justify-center text-center gap-3 py-16">
+              <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+                <Building2 size={22} className="text-muted-foreground" />
               </div>
-
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Users size={14} />
-                  <span className="font-tabular">{room.capacity} seats</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Gamepad2 size={14} />
-                  <span className="font-tabular">{room.controllers} ctrl</span>
-                </span>
-              </div>
-
-              <div className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between gap-2">
-                <span className="text-sm font-bold text-accent font-tabular">
-                  {room.hourlyRate} EGP
-                  <span className="text-xs font-medium text-muted-foreground">/hr</span>
-                </span>
-                {room.customer && (
-                  <span className="text-xs text-muted-foreground truncate">{room.customer}</span>
-                )}
-              </div>
+              <p className="text-sm font-semibold text-foreground">No rooms here</p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Try a different status filter to see more rooms.
+              </p>
             </div>
-          ))}
-        </div>
-      )}
-      </>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filtered.map((room) => (
+                <div
+                  key={room.id}
+                  className={`card-base card-hover p-4 flex flex-col gap-3 ${bgStyles[room.status]}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-foreground truncate">{room.name}</h3>
+                      <span className={`status-badge mt-1.5 ${typeStyles[room.roomType]}`}>
+                        {room.roomType}
+                      </span>
+                    </div>
+                    <select
+                      value={room.status}
+                      onChange={(e) => handleStatusChange(room.id, e.target.value as RoomStatus)}
+                      className={`status-badge cursor-pointer outline-none appearance-none text-center pr-2 flex-shrink-0 ${statusStyles[room.status]}`}
+                      title="Change status"
+                    >
+                      <option value="Available">Available</option>
+                      <option value="Occupied">Occupied</option>
+                      <option value="Reserved">Reserved</option>
+                      <option value="Maintenance">Maintenance</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Gamepad2 size={14} />
+                    <span>{room.psModel}</span>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Users size={14} />
+                      <span className="font-tabular">{room.capacity} seats</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Gamepad2 size={14} />
+                      <span className="font-tabular">{room.controllers} ctrl</span>
+                    </span>
+                  </div>
+
+                  <div className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-accent font-tabular">
+                      {room.hourlyRate} EGP
+                      <span className="text-xs font-medium text-muted-foreground">/hr</span>
+                    </span>
+                    {room.customer && (
+                      <span className="text-xs text-muted-foreground truncate">
+                        {room.customer}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Add Room Modal */}

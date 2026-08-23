@@ -1,5 +1,8 @@
 'use client';
+
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Clock, DoorOpen, ChevronRight, Monitor, Building2 } from 'lucide-react';
 import DashboardTopBar from './DashboardTopBar';
 import QuickStatsRow from './QuickStatsRow';
 import RoomStatusGrid, { type Room } from './RoomStatusGrid';
@@ -12,8 +15,30 @@ import QuickActionModal, {
   type QuickActionTarget,
   type QuickActionResponse,
 } from '@/app/live-sessions/components/QuickActionModal';
+import { useRole } from '@/contexts/AuthContext';
 import { toast, Toaster } from 'sonner';
 import { ZONES, type ZoneSession } from '@/data/zones';
+
+type DashboardRole = 'staff' | 'manager' | 'owner';
+
+type KPI = {
+  id: string;
+  label: string;
+  value: string;
+  sub: string;
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+  border: string;
+};
+
+type DashboardConfig = {
+  headline: string;
+  subhead: string;
+  showStartSession: boolean;
+  showFullOwnerView: boolean;
+  kpis: KPI[];
+};
 
 const initialRooms: Room[] = [
   {
@@ -160,11 +185,249 @@ function zoneToQuickTarget(zone: ZoneSession): QuickActionTarget {
   };
 }
 
+function DashboardLayout({
+  config,
+  onStartSession,
+  children,
+}: {
+  config: DashboardConfig;
+  onStartSession: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">
+      <div className="relative z-10 space-y-6 stagger-in">
+        <DashboardTopBar />
+        <div className="glass-panel rounded-xl p-5 lg:p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{config.headline}</h1>
+              <p className="text-sm text-muted-foreground mt-1">{config.subhead}</p>
+            </div>
+            {config.showStartSession && (
+              <button
+                onClick={onStartSession}
+                className="px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+              >
+                Start Session
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 ${config.kpis.length > 2 ? 'xl:grid-cols-4' : ''} gap-3`}
+        >
+          {config.kpis.map((stat) => (
+            <div key={stat.id} className="glass-panel glow-hover rounded-xl p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className={`p-2 rounded-full ring-1 ${stat.bg} ${stat.border}`}>
+                  <span className={stat.color}>{stat.icon}</span>
+                </div>
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {stat.label}
+              </p>
+              <p className={`text-2xl font-bold font-tabular mt-1 ${stat.color}`}>{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SimpleRoomGrid({ rooms, onSelect }: { rooms: Room[]; onSelect: (room: Room) => void }) {
+  const statusClass: Record<Room['status'], string> = {
+    available: 'bg-success text-success',
+    occupied: 'bg-danger text-danger',
+    reserved: 'bg-warning text-warning',
+    maintenance: 'bg-muted text-muted-foreground',
+  };
+
+  return (
+    <div className="glass-panel rounded-xl p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Room Grid</h2>
+          <p className="text-xs text-muted-foreground">Tap a room for details</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {rooms.map((room) => (
+          <button
+            key={room.id}
+            onClick={() => onSelect(room)}
+            className="text-left glass-panel rounded-xl p-4 hover:border-primary/40 transition-all duration-200"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-foreground">{room.name}</p>
+                {room.status === 'occupied' && room.currentCustomer ? (
+                  <p className="text-xs text-muted-foreground mt-1 truncate">
+                    {room.currentCustomer}
+                  </p>
+                ) : null}
+              </div>
+              <span
+                className={`px-2 py-1 rounded-full text-[11px] font-semibold ${statusClass[room.status]}`}
+              >
+                {room.status}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RoomDetailModal({ room, onClose }: { room: Room; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md glass-panel rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-foreground">{room.name}</h3>
+            <p className="text-xs text-muted-foreground">{room.psModel}</p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <ChevronRight size={18} className="rotate-45" />
+          </button>
+        </div>
+        <div className="space-y-2 text-sm">
+          <p className="text-muted-foreground">
+            Status: <span className="text-foreground">{room.status}</span>
+          </p>
+          <p className="text-muted-foreground">
+            Controllers: <span className="text-foreground">{room.controllers}</span>
+          </p>
+          <p className="text-muted-foreground">
+            Max Players: <span className="text-foreground">{room.capacity}</span>
+          </p>
+          <p className="text-muted-foreground">
+            Quality: <span className="text-foreground">{room.quality}/5</span>
+          </p>
+          {room.currentCustomer && (
+            <p className="text-muted-foreground">
+              Customer: <span className="text-foreground">{room.currentCustomer}</span>
+            </p>
+          )}
+          {room.game && (
+            <p className="text-muted-foreground">
+              Game: <span className="text-foreground">{room.game}</span>
+            </p>
+          )}
+          {room.elapsedMinutes != null && (
+            <p className="text-muted-foreground">
+              Elapsed: <span className="text-foreground">{room.elapsedMinutes}m</span>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const configByRole: Record<DashboardRole, DashboardConfig> = {
+  staff: {
+    headline: 'Staff Dashboard',
+    subhead: 'Fast room assignment and live floor control.',
+    showStartSession: true,
+    showFullOwnerView: false,
+    kpis: [
+      {
+        id: 'available',
+        label: 'Available Rooms',
+        value: '2',
+        sub: 'ready now',
+        icon: <DoorOpen size={20} />,
+        color: 'text-primary',
+        bg: 'bg-primary/10',
+        border: 'border-primary/20',
+      },
+      {
+        id: 'waiting',
+        label: 'Waiting Customers',
+        value: '3',
+        sub: 'queued at desk',
+        icon: <Clock size={20} />,
+        color: 'text-warning',
+        bg: 'bg-warning/10',
+        border: 'border-warning/20',
+      },
+    ],
+  },
+  manager: {
+    headline: 'Manager Dashboard',
+    subhead: 'Operational control with roll-up performance summary.',
+    showStartSession: true,
+    showFullOwnerView: false,
+    kpis: [
+      {
+        id: 'available',
+        label: 'Available Rooms',
+        value: '2',
+        sub: 'ready now',
+        icon: <DoorOpen size={20} />,
+        color: 'text-primary',
+        bg: 'bg-primary/10',
+        border: 'border-primary/20',
+      },
+      {
+        id: 'waiting',
+        label: 'Waiting Customers',
+        value: '3',
+        sub: 'queued at desk',
+        icon: <Clock size={20} />,
+        color: 'text-warning',
+        bg: 'bg-warning/10',
+        border: 'border-warning/20',
+      },
+      {
+        id: 'sessions',
+        label: "Today's Sessions",
+        value: '18',
+        sub: 'started so far',
+        icon: <Monitor size={20} />,
+        color: 'text-accent',
+        bg: 'bg-accent/10',
+        border: 'border-accent/20',
+      },
+      {
+        id: 'occupancy',
+        label: 'Occupancy Rate',
+        value: '72%',
+        sub: 'rooms in use',
+        icon: <Building2 size={20} />,
+        color: 'text-info',
+        bg: 'bg-info/10',
+        border: 'border-info/20',
+      },
+    ],
+  },
+  owner: {
+    headline: 'Owner Dashboard',
+    subhead: 'Full business overview including finance and management.',
+    showStartSession: false,
+    showFullOwnerView: true,
+    kpis: [],
+  },
+};
+
 export default function StaffDashboardContent() {
+  const role = (useRole() ?? 'staff') as DashboardRole;
+  const config = configByRole[role];
   const [zones, setZones] = useState<ZoneSession[]>(() => structuredClone(ZONES));
   const [rooms] = useState<Room[]>(initialRooms);
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedZone, setSelectedZone] = useState<ZoneSession | null>(null);
+  const router = useRouter();
+
   const activeZones = useMemo(() => zones.filter((zone) => zone.status === 'active'), [zones]);
   const activeSessions = useMemo(() => activeZones.map(toActiveSession), [activeZones]);
 
@@ -185,33 +448,92 @@ export default function StaffDashboardContent() {
             }
       )
     );
-    toast.success(
-      `Added ${result.productAdded?.name ?? 'item'} + extended ${result.timeExtended ?? 0}min to ${updated.label}`
-    );
+    toast.success(`Updated ${updated.label}`);
     setSelectedZone(null);
   };
 
-  return (
-    <div className="relative p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">
-      <Toaster position="bottom-right" theme="system" />
-      <div className="pointer-events-none absolute -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-32 w-[26rem] h-[26rem] rounded-full bg-accent/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-1/3 w-[24rem] h-[24rem] rounded-full bg-warning/5 blur-3xl" />
-      <div className="relative z-10 space-y-6 stagger-in">
-        <DashboardTopBar />
-        <QuickStatsRow />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <RoomStatusGrid rooms={rooms} />
-            <ActiveSessionsList sessions={activeSessions} />
-          </div>
-          <div className="lg:col-span-1 space-y-4">
-            <QuickActionsPanel onQuickAction={() => setQuickMenuOpen(true)} />
-            <UpcomingReservationsPanel />
-            <WaitingListPanel />
+  if (config.showFullOwnerView) {
+    return (
+      <div className="relative p-4 lg:p-6 xl:p-8 max-w-screen-2xl mx-auto space-y-6">
+        <Toaster position="bottom-right" theme="system" />
+        <div className="pointer-events-none absolute -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/3 -right-32 w-[26rem] h-[26rem] rounded-full bg-accent/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-1/3 w-[24rem] h-[24rem] rounded-full bg-warning/5 blur-3xl" />
+        <div className="relative z-10 space-y-6 stagger-in">
+          <DashboardTopBar />
+          <QuickStatsRow />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <RoomStatusGrid rooms={rooms} />
+              <ActiveSessionsList sessions={activeSessions} />
+            </div>
+            <div className="lg:col-span-1 space-y-4">
+              <QuickActionsPanel onQuickAction={() => setQuickMenuOpen(true)} />
+              <UpcomingReservationsPanel />
+              <WaitingListPanel />
+            </div>
           </div>
         </div>
+        {quickMenuOpen && (
+          <QuickActionsMenu
+            zones={activeZones}
+            onClose={() => setQuickMenuOpen(false)}
+            onSelect={(zone) => {
+              setQuickMenuOpen(false);
+              setSelectedZone(zone);
+            }}
+          />
+        )}
+        {selectedZone && (
+          <QuickActionModal
+            target={zoneToQuickTarget(selectedZone)}
+            apiPath="/api/quick-action"
+            onClose={() => setSelectedZone(null)}
+            onApply={handleQuickApply}
+          />
+        )}
       </div>
+    );
+  }
+
+  return (
+    <DashboardLayout config={config} onStartSession={() => setQuickMenuOpen(true)}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <SimpleRoomGrid rooms={rooms} onSelect={setSelectedRoom} />
+        </div>
+        <div className="lg:col-span-1 space-y-4">
+          {role === 'manager' ? (
+            <>
+              <div className="glass-panel rounded-xl p-4">
+                <h2 className="text-sm font-semibold text-foreground mb-2">Operational Summary</h2>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Revenue today: 2,840 EGP</p>
+                  <p>Hardware alerts: 2</p>
+                  <p>Inventory alerts: 2</p>
+                </div>
+              </div>
+              <WaitingListPanel />
+              <UpcomingReservationsPanel />
+            </>
+          ) : (
+            <div className="glass-panel rounded-xl p-4">
+              <h2 className="text-sm font-semibold text-foreground mb-2">Fast Actions</h2>
+              <button
+                onClick={() => router.push('/live-sessions')}
+                className="w-full flex items-center justify-between rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-left text-primary font-semibold"
+              >
+                Open Live Sessions
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedRoom && (
+        <RoomDetailModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
+      )}
 
       {quickMenuOpen && (
         <QuickActionsMenu
@@ -232,6 +554,6 @@ export default function StaffDashboardContent() {
           onApply={handleQuickApply}
         />
       )}
-    </div>
+    </DashboardLayout>
   );
 }

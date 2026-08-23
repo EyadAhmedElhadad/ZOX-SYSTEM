@@ -147,10 +147,7 @@ export default function StaffAttendanceContent() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const { data, loading, error, reload } = useAsyncData<StaffShift[]>(async () => {
-    const [staff, roster] = await Promise.all([
-      staffApi.list(),
-      attendanceApi.todayRoster(),
-    ]);
+    const [staff, roster] = await Promise.all([staffApi.list(), attendanceApi.todayRoster()]);
     const byId = new Map(roster.map((r) => [r.staffId, r]));
     return staff
       .filter((s) => s.status === 'Active')
@@ -208,9 +205,7 @@ export default function StaffAttendanceContent() {
   if (user.role !== 'owner' && user.role !== 'manager') return null;
 
   if (loading) {
-    return (
-      <div className="glass-panel p-10 text-center text-muted-foreground">Loading...</div>
-    );
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading...</div>;
   }
 
   const handleCheckIn = async (staffId: string) => {

@@ -250,121 +250,125 @@ export default function WaitingListContent() {
       {loading ? (
         <div className="glass-panel p-10 text-center text-muted-foreground">Loading…</div>
       ) : (
-      <>
-      {/* Queue */}
-      {queue.length === 0 ? (
-        <div className="card-base flex flex-col items-center justify-center text-center gap-3 py-16">
-          <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
-            <Users size={22} className="text-muted-foreground" />
-          </div>
-          <p className="text-sm font-semibold text-foreground">Queue is empty</p>
-          <p className="text-xs text-muted-foreground max-w-xs">
-            Add a group to the waiting list and they will appear here in order.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {queue.map((entry) => {
-            const waited = now.getTime() - parseJoined(entry.joinedAt).getTime();
-            const waitingMinutes = Math.max(0, Math.floor(waited / 60000));
-            return (
-              <div
-                key={entry.id}
-                className={`card-base p-4 flex flex-col lg:flex-row lg:items-center gap-3 ${
-                  entry.status === 'Seated' ? 'opacity-70' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">{initials(entry.name)}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-foreground truncate">{entry.name}</p>
-                      <span className={`status-badge ${statusStyles[entry.status]}`}>
-                        {entry.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {entry.partySize} {entry.partySize > 1 ? 'people' : 'person'} ·{' '}
-                      {entry.roomPreference} room{entry.game ? ` · ${entry.game}` : ''}
-                      {entry.phone ? ` · ${entry.phone}` : ''}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 lg:gap-4 lg:ml-auto">
-                  <div className="flex items-center gap-1.5">
-                    <Clock size={14} className="text-warning" />
-                    <span className="text-sm font-bold text-foreground font-tabular">
-                      {formatWait(waited)}
-                    </span>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {waitingMinutes === 0 ? 'just now' : 'waiting'}
-                    </span>
-                  </div>
-                <div className="flex items-center gap-1.5">
-                  {entry.status !== 'Seated' && entry.status !== 'Cancelled' && (
-                    <>
-                      {entry.status === 'Waiting' && (
-                          <button
-                            onClick={() => handleNotify(entry)}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-info/10 border border-info/25 text-info hover:bg-info/20 transition-all duration-150"
-                            title="Notify customer"
-                          >
-                            <Bell size={12} />
-                            Notify
-                          </button>
-                        )}
-                        {availableRooms.length > 0 ? (
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <button
-                              onClick={() => handleSeatToRoom(entry, availableRooms[0])}
-                              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
-                              title={`Seat in ${availableRooms[0].name}`}
-                            >
-                              <Check size={12} />
-                              Seat now
-                            </button>
-                            {availableRooms.slice(1, 3).map((room) => (
-                              <button
-                                key={room.id}
-                                onClick={() => handleSeatToRoom(entry, room)}
-                                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-muted/30 border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-150"
-                                title={`Seat in ${room.name}`}
-                              >
-                                <MapPin size={12} />
-                                {room.name}
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleSeat(entry)}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
-                            title="Mark seated"
-                          >
-                            <Check size={12} />
-                            Seat
-                          </button>
-                        )}
-                      </>
-                    )}
-                    <button
-                      onClick={() => handleRemove(entry)}
-                      className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-danger/10 border border-danger/25 text-danger hover:bg-danger/20 transition-all duration-150"
-                      title="Remove from queue"
-                    >
-                      <X size={12} />
-                      Bump
-                    </button>
-                  </div>
-                </div>
+        <>
+          {/* Queue */}
+          {queue.length === 0 ? (
+            <div className="card-base flex flex-col items-center justify-center text-center gap-3 py-16">
+              <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+                <Users size={22} className="text-muted-foreground" />
               </div>
-            );
-          })}
-        </div>
-      )}
-      </>
+              <p className="text-sm font-semibold text-foreground">Queue is empty</p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Add a group to the waiting list and they will appear here in order.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {queue.map((entry) => {
+                const waited = now.getTime() - parseJoined(entry.joinedAt).getTime();
+                const waitingMinutes = Math.max(0, Math.floor(waited / 60000));
+                return (
+                  <div
+                    key={entry.id}
+                    className={`card-base p-4 flex flex-col lg:flex-row lg:items-center gap-3 ${
+                      entry.status === 'Seated' ? 'opacity-70' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary">
+                          {initials(entry.name)}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            {entry.name}
+                          </p>
+                          <span className={`status-badge ${statusStyles[entry.status]}`}>
+                            {entry.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {entry.partySize} {entry.partySize > 1 ? 'people' : 'person'} ·{' '}
+                          {entry.roomPreference} room{entry.game ? ` · ${entry.game}` : ''}
+                          {entry.phone ? ` · ${entry.phone}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 lg:gap-4 lg:ml-auto">
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={14} className="text-warning" />
+                        <span className="text-sm font-bold text-foreground font-tabular">
+                          {formatWait(waited)}
+                        </span>
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
+                          {waitingMinutes === 0 ? 'just now' : 'waiting'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {entry.status !== 'Seated' && entry.status !== 'Cancelled' && (
+                          <>
+                            {entry.status === 'Waiting' && (
+                              <button
+                                onClick={() => handleNotify(entry)}
+                                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-info/10 border border-info/25 text-info hover:bg-info/20 transition-all duration-150"
+                                title="Notify customer"
+                              >
+                                <Bell size={12} />
+                                Notify
+                              </button>
+                            )}
+                            {availableRooms.length > 0 ? (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <button
+                                  onClick={() => handleSeatToRoom(entry, availableRooms[0])}
+                                  className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
+                                  title={`Seat in ${availableRooms[0].name}`}
+                                >
+                                  <Check size={12} />
+                                  Seat now
+                                </button>
+                                {availableRooms.slice(1, 3).map((room) => (
+                                  <button
+                                    key={room.id}
+                                    onClick={() => handleSeatToRoom(entry, room)}
+                                    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-muted/30 border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-150"
+                                    title={`Seat in ${room.name}`}
+                                  >
+                                    <MapPin size={12} />
+                                    {room.name}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleSeat(entry)}
+                                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-accent/10 border border-accent/25 text-accent hover:bg-accent/20 transition-all duration-150"
+                                title="Mark seated"
+                              >
+                                <Check size={12} />
+                                Seat
+                              </button>
+                            )}
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleRemove(entry)}
+                          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-danger/10 border border-danger/25 text-danger hover:bg-danger/20 transition-all duration-150"
+                          title="Remove from queue"
+                        >
+                          <X size={12} />
+                          Bump
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
       {/* Add to Queue Modal */}
       {addOpen && (

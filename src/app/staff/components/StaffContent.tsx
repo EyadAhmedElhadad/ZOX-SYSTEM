@@ -56,7 +56,7 @@ const initialForm = {
 };
 
 export default function StaffContent() {
-  const { data, loading, error, reload } = useAsyncData(() => staffApi.list(), []);
+  const { data, loading, reload } = useAsyncData(() => staffApi.list(), []);
   const staff = data ?? [];
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<StaffRole | 'All'>('All');
@@ -64,9 +64,7 @@ export default function StaffContent() {
   const [newStaff, setNewStaff] = useState(initialForm);
 
   if (loading) {
-    return (
-      <div className="glass-panel p-10 text-center text-muted-foreground">Loading...</div>
-    );
+    return <div className="glass-panel p-10 text-center text-muted-foreground">Loading...</div>;
   }
 
   const active = staff.filter((s) => s.status === 'Active').length;

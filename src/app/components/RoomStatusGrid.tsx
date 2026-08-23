@@ -23,7 +23,7 @@ export interface Room {
 }
 
 interface RoomStatusGridProps {
-  rooms: Room[];
+  rooms?: Room[] | null;
 }
 
 const statusConfig: Record<
@@ -87,16 +87,20 @@ function QualityStars({ quality }: { quality: number }) {
   );
 }
 
-export default function RoomStatusGrid({ rooms }: RoomStatusGridProps) {
+export default function RoomStatusGrid({ rooms = [] }: RoomStatusGridProps) {
   const [filter, setFilter] = useState<RoomStatus | 'all'>('all');
+  const safeRooms = Array.isArray(rooms) ? rooms : [];
+  const validRooms = safeRooms.filter(
+    (r): r is Room => r != null && typeof r === 'object' && 'status' in r
+  );
 
-  const filtered = filter === 'all' ? rooms : rooms.filter((r) => r.status === filter);
+  const filtered = filter === 'all' ? validRooms : validRooms.filter((r) => r.status === filter);
   const counts = {
-    all: rooms.length,
-    available: rooms.filter((r) => r.status === 'available').length,
-    occupied: rooms.filter((r) => r.status === 'occupied').length,
-    reserved: rooms.filter((r) => r.status === 'reserved').length,
-    maintenance: rooms.filter((r) => r.status === 'maintenance').length,
+    all: validRooms.length,
+    available: validRooms.filter((r) => r.status === 'available').length,
+    occupied: validRooms.filter((r) => r.status === 'occupied').length,
+    reserved: validRooms.filter((r) => r.status === 'reserved').length,
+    maintenance: validRooms.filter((r) => r.status === 'maintenance').length,
   };
 
   return (

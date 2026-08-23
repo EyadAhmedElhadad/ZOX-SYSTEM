@@ -42,12 +42,6 @@ export default function InventoryContent() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const getStatus = (stock: number, reorderLevel: number): StockStatus => {
-    if (stock <= 0) return 'Out of Stock';
-    if (stock <= reorderLevel) return 'Low Stock';
-    return 'In Stock';
-  };
-
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.name.trim() || !newItem.sku.trim()) {

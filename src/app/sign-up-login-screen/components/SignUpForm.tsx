@@ -31,21 +31,19 @@ export default function SignUpForm() {
 
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
-    const created = await registerAccount({
+    const result = await registerAccount({
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
       phone: data.phone.trim(),
       password: data.password,
     });
     setIsLoading(false);
-    if (created) {
+    if (result.ok) {
       toast.success(
-        created.id && created.role
-          ? `Welcome, ${created.name}! Your account is ready.`
-          : `Welcome, ${created.name}!`
+        `Welcome, ${result.user.name}! ${result.user.role === 'customer' ? 'Your account is ready.' : 'Check your email to confirm your account.'}`
       );
     } else {
-      toast.error('Could not create this account. It may already exist — try logging in.');
+      toast.error(result.error);
     }
   };
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { z } from 'zod';
 import type {
   CustomerRow,
   FeedbackRow,
@@ -9,16 +8,7 @@ import type {
   StaffRow,
 } from '@/lib/supabase/types';
 import { customerSchema, feedbackSchema, staffSchema } from '@/lib/validation';
-import {
-  deleteRow,
-  enGBDate,
-  fetchAll,
-  hhmm,
-  insertRow,
-  updateRow,
-  useAsyncData,
-  type AsyncData,
-} from './base';
+import { deleteRow, enGBDate, fetchAll, hhmm, insertRow, updateRow } from './base';
 
 // ---------------------------------------------------------------------------
 // Customers (also the loyalty member store)
@@ -210,14 +200,7 @@ export const staffApi = {
   },
   async update(id: string, patch: Partial<UiStaffMember>): Promise<void> {
     const values: Record<string, unknown> = {};
-    for (const key of [
-      'name',
-      'email',
-      'phone',
-      'shift',
-      'status',
-      'emergencyContact',
-    ] as const) {
+    for (const key of ['name', 'email', 'phone', 'shift', 'status', 'emergencyContact'] as const) {
       if (patch[key] !== undefined)
         values[key === 'emergencyContact' ? 'emergency_contact' : key] = patch[key];
     }
@@ -261,7 +244,8 @@ export const attendanceApi = {
   /** Today's roster derived from active staff + their shift schedule. */
   async todayRoster(): Promise<UiAttendanceShift[]> {
     const [{ data, error }, staff] = await Promise.all([
-      (await import('@/lib/supabase/client')).getSupabaseBrowserClient()
+      (await import('@/lib/supabase/client'))
+        .getSupabaseBrowserClient()
         .from('attendance')
         .select('*')
         .eq('work_date', new Date().toISOString().slice(0, 10)),
@@ -289,7 +273,7 @@ export const attendanceApi = {
         const [start, end] =
           rec?.shift_start && rec?.shift_end
             ? [rec.shift_start.slice(0, 5), rec.shift_end.slice(0, 5)]
-            : SHIFT_TIMES[s.shift] ?? ['', ''];
+            : (SHIFT_TIMES[s.shift] ?? ['', '']);
         return {
           staffId: s.id,
           name: s.name,

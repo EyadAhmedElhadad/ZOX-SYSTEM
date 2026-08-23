@@ -51,16 +51,30 @@ export async function fetchAll<TRow>(
   return (data ?? []) as TRow[];
 }
 
-export async function insertRow<TRow>(table: TableName, values: Record<string, unknown>): Promise<TRow> {
+export async function insertRow<TRow>(
+  table: TableName,
+  values: Record<string, unknown>
+): Promise<TRow> {
   const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase.from(table).insert(values as never).select().single();
+  const { data, error } = await supabase
+    .from(table)
+    .insert(values as never)
+    .select()
+    .single();
   if (error) throw apiError(error, `Failed to create ${table.replace(/_/g, ' ')}`);
   return data as TRow;
 }
 
-export async function updateRow(table: TableName, id: string, values: Record<string, unknown>): Promise<void> {
+export async function updateRow(
+  table: TableName,
+  id: string,
+  values: Record<string, unknown>
+): Promise<void> {
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from(table).update(values as never).eq('id', id);
+  const { error } = await supabase
+    .from(table)
+    .update(values as never)
+    .eq('id', id);
   if (error) throw apiError(error, `Failed to update ${table.replace(/_/g, ' ')}`);
 }
 
